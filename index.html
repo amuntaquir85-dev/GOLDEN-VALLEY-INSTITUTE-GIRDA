@@ -428,8 +428,6 @@ let state = loadState();
 let currentRoute = 'dashboard';
 let viewFilters = { studentSearch:'', studentBatch:'', feeTab:'pending', attBatch:'', attDate: todayISO() };
 let currentOMRResult = null;
-
-// Global Answer Key
 let savedAnswerKey = JSON.parse(localStorage.getItem('gvi_answer_key_v2')) || new Array(100).fill('-');
 
 function $(s, r=document){ return r.querySelector(s); }
@@ -567,7 +565,7 @@ function attachAnswerKey(){
     savedAnswerKey = arr;
     localStorage.setItem('gvi_answer_key_v2', JSON.stringify(arr));
     toast('Answer key saved ✓', 'success');
-    render(); // Refresh badge
+    render();
   });
 
   $('#resetKeyBtn')?.addEventListener('click', () => {
@@ -603,10 +601,16 @@ function renderOMR(){
     <div id="omrResultBox" style="display:none; padding:20px; background:#fff; border-radius:12px; border:2px solid var(--gold); text-align:center; box-shadow: 0 4px 12px rgba(0,0,0,0.1)">
       <h2 style="color:var(--gold-dark); font-size:32px; margin-bottom:5px" id="omrFinalScore">0 / 0</h2>
       <p style="font-size:14px; color:var(--slate); margin-bottom:15px">Result Calculate Ho Gaya</p>
+      
+      <!-- Naya Feature: Detected Image Preview -->
+      <div style="margin-bottom: 15px;">
+        <p style="font-size: 12px; color: var(--slate); margin-bottom: 5px;">AI ne paper ka ye hissa padha:</p>
+        <img id="omrPreviewImg" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid var(--slate-4); object-fit: contain;">
+      </div>
+      
       <button class="btn btn-primary" id="omrSaveBtn">✅ Result Save Karein</button>
     </div>
 
-    <!-- Fullscreen Camera Overlay -->
     <div id="omrCamBox">
       <video id="omrVideo" autoplay playsinline></video>
       <div class="omr-guide"></div>
@@ -660,6 +664,7 @@ function attachOMR(){
     $('#omrResultBox').style.display = 'block';
     $('#omrFinalScore').textContent = "Processing...";
     $('#omrSaveBtn').style.display = 'none';
+    $('#omrPreviewImg').src = '';
 
     setTimeout(() => processAdvancedOMR(canvas, name), 100);
   });
@@ -685,52 +690,77 @@ function processAdvancedOMR(canvas, studentName) {
     
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
     cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
-    cv.Canny(gray, edges, 75, 200);
+    
+    // Better Canny logic for detecting edges in uneven lighting
+    let median = cv.mean(gray)[0];
+    let lower = Math.max(0, (1 - 0.33) * median);
+    let upper = Math.min(255, (1 + 0.33) * median);
+    cv.Canny(gray, edges, lower, upper);
+    
+    // Dilate to close gaps in edges
+    let kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
+    cv.dilate(edges, edges, kernel);
     
     let contours = new cv.MatVector();
     let hierarchy = new cv.Mat();
-    cv.findContours(edges, contours, hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
+    cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
     
     let maxArea = 0;
     let maxContour = null;
+    let imgArea = canvas.width * canvas.height;
     
     for (let i = 0; i < contours.size(); ++i) {
       let cnt = contours.get(i);
-      let perimeter = cv.arcLength(cnt, true);
-      let approx = new cv.Mat();
-      cv.approxPolyDP(cnt, approx, 0.02 * perimeter, true);
+      let area = cv.contourArea(cnt);
       
-      if (approx.rows === 4) { 
-        let area = cv.contourArea(approx);
-        if (area > maxArea) {
-          maxArea = area;
-          maxContour = approx.clone();
+      // Only look at large shapes (at least 15% of screen)
+      if (area > imgArea * 0.15) {
+        let perimeter = cv.arcLength(cnt, true);
+        let approx = new cv.Mat();
+        cv.approxPolyDP(cnt, approx, 0.02 * perimeter, true);
+        
+        if (approx.rows === 4) { 
+          if (area > maxArea) {
+            maxArea = area;
+            if (maxContour) maxContour.delete();
+            maxContour = approx.clone();
+          }
         }
+        approx.delete();
       }
-      approx.delete();
       cnt.delete();
     }
     
     if (maxContour && maxArea > 10000) {
+      // Robust Corner Sorting (Top-Left, Top-Right, Bottom-Right, Bottom-Left)
       let pts = [];
       for (let i = 0; i < 4; i++) {
         pts.push({ x: maxContour.data32S[i * 2], y: maxContour.data32S[i * 2 + 1] });
       }
       
-      pts.sort((a, b) => a.y - b.y);
-      let top = pts.slice(0, 2).sort((a, b) => a.x - b.x);
-      let bottom = pts.slice(2, 4).sort((a, b) => a.x - b.x);
+      pts.sort((a, b) => (a.x + a.y) - (b.x + b.y));
+      let tl = pts[0];
+      let br = pts[3];
+      pts.sort((a, b) => (a.x - a.y) - (b.x - b.y));
+      let tr = pts[3];
+      let bl = pts[0];
+      
       let srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
-        top[0].x, top[0].y, top[1].x, top[1].y,
-        bottom[1].x, bottom[1].y, bottom[0].x, bottom[0].y
+        tl.x, tl.y, tr.x, tr.y, br.x, br.y, bl.x, bl.y
       ]);
       
-      let width = 1000, height = 1414; // A4 aspect ratio
+      let width = 1000, height = 1414; // A4 Size
       let dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, width, 0, width, height, 0, height]);
       let M = cv.getPerspectiveTransform(srcTri, dstTri);
       let warped = new cv.Mat();
       cv.warpPerspective(src, warped, M, new cv.Size(width, height));
       
+      // --- SHOW PREVIEW TO USER ---
+      let previewCanvas = document.createElement('canvas');
+      cv.imshow(previewCanvas, warped);
+      $('#omrPreviewImg').src = previewCanvas.toDataURL('image/jpeg', 0.7);
+      // ----------------------------
+
       let warpedGray = new cv.Mat();
       cv.cvtColor(warped, warpedGray, cv.COLOR_RGBA2GRAY);
       
@@ -746,7 +776,7 @@ function processAdvancedOMR(canvas, studentName) {
         let cnt = c2.get(i);
         let rect = cv.boundingRect(cnt);
         
-        // Filter: ignore top 40% (instructions), bubble size roughly 10-40px
+        // Ignore top 40% (instructions/roll no) and look for small bubbles
         if (rect.y > height * 0.40 && rect.width > 12 && rect.width < 40 && rect.height > 12 && rect.height < 40) {
           let aspect = rect.width / rect.height;
           if (aspect > 0.7 && aspect < 1.3) { 
@@ -766,15 +796,11 @@ function processAdvancedOMR(canvas, studentName) {
         cnt.delete();
       }
       
-      // Sort bubbles top-to-bottom, then left-to-right
       bubbles.sort((a, b) => {
-        if (Math.abs(a.y - b.y) < 15) {
-          return a.x - b.x;
-        }
+        if (Math.abs(a.y - b.y) < 15) return a.x - b.x;
         return a.y - b.y;
       });
       
-      // Group into rows
       let rows = [];
       let currentRow = [];
       let lastY = -1;
@@ -798,7 +824,6 @@ function processAdvancedOMR(canvas, studentName) {
       
       let studentAnswers = new Array(100).fill(null);
       
-      // Mapping Logic for 20 Rows * 5 Columns * 4 Options
       if (rows.length >= 20) {
          for (let r = 0; r < 20; r++) {
              let row = rows[r];
@@ -840,7 +865,7 @@ function processAdvancedOMR(canvas, studentName) {
       warped.delete(); warpedGray.delete(); thresh.delete(); M.delete(); dstTri.delete(); srcTri.delete(); c2.delete(); h2.delete();
     } else {
       $('#omrFinalScore').textContent = "Sheet Nahi Mili";
-      toast('Paper ke 4 kone nahi mile. Kripya paper ko border ke andar rakhein.','error');
+      toast('Paper ke 4 kone nahi mile. Kripya paper ko border ke andar aur seedha rakhein.','error');
     }
     
     src.delete(); gray.delete(); edges.delete(); contours.delete(); hierarchy.delete();
