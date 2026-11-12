@@ -12,6 +12,8 @@
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon.svg">
 <title>Golden Valley Institute — Management System</title>
+<!-- OpenCV for OMR Scanner -->
+<script async src="https://docs.opencv.org/4.7.0/opencv.js" id="opencvjs"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -311,6 +313,7 @@ tbody tr:last-child td{border-bottom:none}
       <button class="nav-item" data-route="students"><span class="icon">👥</span><span>Students</span><span class="badge" id="studentBadge" style="display:none">0</span></button>
       <button class="nav-item" data-route="batches"><span class="icon">📚</span><span>Batches</span></button>
       <button class="nav-item" data-route="attendance"><span class="icon">✅</span><span>Attendance</span></button>
+      <button class="nav-item" data-route="omr"><span class="icon">📝</span><span>OMR Scan</span></button>
       <button class="nav-item" data-route="fees"><span class="icon">💰</span><span>Fees</span><span class="badge" id="feeBadge" style="display:none">0</span></button>
       <button class="nav-item" data-route="notices"><span class="icon">📢</span><span>Notices</span></button>
       <button class="nav-item" data-route="settings"><span class="icon">⚙️</span><span>Settings</span></button>
@@ -337,7 +340,7 @@ tbody tr:last-child td{border-bottom:none}
   </main>
 </div>
 
-<!-- BOTTOM NAV (mobile) -->
+<!-- BOTTOM NAV -->
 <nav class="bottom-nav" id="bottomNav">
   <button class="bn-item active" data-route="dashboard"><span class="bn-icon">📊</span><span class="bn-label">Home</span></button>
   <button class="bn-item" data-route="students"><span class="bn-icon">👥</span><span class="bn-label">Students</span></button>
@@ -364,11 +367,11 @@ tbody tr:last-child td{border-bottom:none}
     <div class="sheet-header">More Options</div>
     <div class="sheet-grid">
       <button data-route="batches"><span class="icon">📚</span><span>Batches</span></button>
+      <button data-route="omr"><span class="icon">📝</span><span>OMR Scan</span></button>
       <button data-route="notices"><span class="icon">📢</span><span>Notices</span></button>
       <button data-route="settings"><span class="icon">⚙️</span><span>Settings</span></button>
       <button data-action="quickadd"><span class="icon">➕</span><span>Quick Add</span></button>
       <button data-action="print"><span class="icon">🖨</span><span>Print</span></button>
-      <button data-action="install"><span class="icon">📲</span><span>Install</span></button>
     </div>
   </div>
 </div>
@@ -385,6 +388,7 @@ const ROUTES = {
   students: { title: 'Students', subtitle: 'Manage enrolled students' },
   batches: { title: 'Batches', subtitle: 'Manage class batches' },
   attendance: { title: 'Attendance', subtitle: 'Mark daily attendance' },
+  omr: { title: 'OMR Scanner', subtitle: 'Scan OMR sheets' },
   fees: { title: 'Fees', subtitle: 'Fee collection & history' },
   notices: { title: 'Notices', subtitle: 'Announcements & updates' },
   settings: { title: 'Settings', subtitle: 'Institute information & backup' }
@@ -460,6 +464,7 @@ function render(){
     case 'students': view.innerHTML=renderStudents(); attachStudents(); break;
     case 'batches': view.innerHTML=renderBatches(); attachBatches(); break;
     case 'attendance': view.innerHTML=renderAttendance(); attachAttendance(); break;
+    case 'omr': view.innerHTML=renderOMR(); attachOMR(); break;
     case 'fees': view.innerHTML=renderFees(); attachFees(); break;
     case 'notices': view.innerHTML=renderNotices(); attachNotices(); break;
     case 'settings': view.innerHTML=renderSettings(); attachSettings(); break;
@@ -476,7 +481,7 @@ function renderDashboard(){
   const today=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   return `
     <div style="margin-bottom:20px">
-      <div style="font-size:24px;font-weight:800;letter-spacing:-.02em">Namaste 👋</div>
+      <div style="font-size:24px;font-weight:800;letter-spacing:-.02em">Namaste MUNTAQUIR ALAM 👋</div>
       <div style="color:var(--slate);font-size:13px;margin-top:4px">${esc(today)}</div>
     </div>
     <div class="stats-grid">
@@ -715,6 +720,146 @@ function attachAttendance(){
       haptic(8);
     }));
   });
+}
+
+// ===================== OMR SCANNER =====================
+function renderOMR(){
+  return `
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-header"><div class="card-title">📝 OMR Sheet Scanner</div></div>
+      <div class="card-body">
+        <p style="font-size:13px;color:var(--slate);margin-bottom:12px">Paper ko achhi roshni me rakhein. Camera ko seedha (straight) rakhein taaki 4 black corners clear dikhein.</p>
+        
+        <div style="display:flex;gap:10px;margin-bottom:16px">
+          <button class="btn btn-primary" id="startCameraBtn">📷 Start Camera</button>
+          <button class="btn btn-danger" id="stopCameraBtn" style="display:none">🛑 Stop</button>
+        </div>
+
+        <div id="cameraContainer" style="display:none; position:relative; border-radius:12px; overflow:hidden; background:#000; margin-bottom:16px;">
+          <video id="omrVideo" autoplay playsinline style="width:100%; max-height:400px; object-fit:cover;"></video>
+          <div style="position:absolute;bottom:10px;left:0;right:0;text-align:center">
+            <button class="btn btn-primary" id="captureBtn" style="padding:12px 30px;font-size:16px;border-radius:30px">📸 Capture OMR</button>
+          </div>
+        </div>
+        
+        <canvas id="omrCanvas" style="display:none"></canvas>
+        <div id="omrResultArea" style="display:none; text-align:center; padding:20px; background:var(--slate-5); border-radius:12px;">
+           <div style="font-size:48px; margin-bottom:10px">📄</div>
+           <h3 id="omrResultText">Scanning...</h3>
+           <p id="omrResultSub" style="font-size:13px;color:var(--slate);margin-top:5px"></p>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+let videoStream = null;
+
+function attachOMR(){
+  const video = $('#omrVideo');
+  const canvas = $('#omrCanvas');
+  const container = $('#cameraContainer');
+  const startBtn = $('#startCameraBtn');
+  const stopBtn = $('#stopCameraBtn');
+  const captureBtn = $('#captureBtn');
+
+  startBtn?.addEventListener('click', async () => {
+    try {
+      videoStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
+      });
+      video.srcObject = videoStream;
+      container.style.display = 'block';
+      startBtn.style.display = 'none';
+      stopBtn.style.display = 'inline-block';
+      $('#omrResultArea').style.display = 'none';
+    } catch (err) {
+      toast('Camera access denied or not available', 'error');
+    }
+  });
+
+  stopBtn?.addEventListener('click', () => {
+    if (videoStream) {
+      videoStream.getTracks().forEach(track => track.stop());
+      videoStream = null;
+    }
+    container.style.display = 'none';
+    startBtn.style.display = 'inline-block';
+    stopBtn.style.display = 'none';
+  });
+
+  captureBtn?.addEventListener('click', () => {
+    if (!videoStream) return;
+    
+    if (typeof cv === 'undefined') {
+      toast('AI Library load ho rahi hai, 5 sec wait karein...', 'error');
+      return;
+    }
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    $('#omrResultArea').style.display = 'block';
+    $('#omrResultText').textContent = 'Processing Image...';
+    
+    setTimeout(() => {
+      processOMRImage(canvas);
+    }, 100);
+  });
+}
+
+function processOMRImage(canvas) {
+  try {
+    let src = cv.imread(canvas);
+    let dst = new cv.Mat();
+    cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
+    
+    let thresh = new cv.Mat();
+    cv.threshold(dst, thresh, 150, 255, cv.THRESH_BINARY_INV);
+    
+    let contours = new cv.MatVector();
+    let hierarchy = new cv.Mat();
+    cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+    
+    let bubbleCount = 0;
+    let filledCount = 0;
+    
+    for (let i = 0; i < contours.size(); ++i) {
+      let cnt = contours.get(i);
+      let area = cv.contourArea(cnt);
+      
+      if (area > 50 && area < 1500) { 
+        bubbleCount++;
+        let mask = cv.Mat.zeros(thresh.rows, thresh.cols, cv.CV_8UC1);
+        cv.drawContours(mask, contours, i, new cv.Scalar(255), -1);
+        let mean = cv.mean(thresh, mask)[0];
+        
+        if (mean > 50) {
+          filledCount++;
+        }
+        mask.delete();
+      }
+      cnt.delete();
+    }
+    
+    src.delete(); dst.delete(); thresh.delete(); contours.delete(); hierarchy.delete();
+    
+    if (filledCount > 0) {
+      $('#omrResultText').textContent = `${filledCount} Answers Detected!`;
+      $('#omrResultSub').textContent = `Total ${bubbleCount} circles mile.`;
+      toast(`OMR Scanned: ${filledCount} filled`, 'success');
+    } else {
+      $('#omrResultText').textContent = 'Koi answer detect nahi hua';
+      $('#omrResultSub').textContent = 'Kripya saaf roshni me dobara photo lein.';
+    }
+    
+  } catch (e) {
+    console.error(e);
+    $('#omrResultText').textContent = 'Error!';
+    $('#omrResultSub').textContent = 'Image process nahi ho payi.';
+  }
 }
 
 function renderFees(){
