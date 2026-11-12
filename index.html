@@ -6,7 +6,6 @@
 <meta name="theme-color" content="#0f172a">
 <link rel="manifest" href="./manifest.webmanifest">
 <title>Golden Valley Institute — Management System</title>
-<!-- OMR Scanner AI Library -->
 <script async src="https://docs.opencv.org/4.7.0/opencv.js" id="opencvjs"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -254,6 +253,13 @@ tbody tr:last-child td{border-bottom:none}
 .sheet-grid button:active{transform:scale(.96)}
 .sheet-grid button .icon{font-size:24px}
 
+/* Answer Key Grid */
+.ak-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 4px; }
+.ak-item { display: flex; align-items: center; background: var(--white); border: 1px solid var(--slate-3); border-radius: 6px; overflow: hidden; }
+.ak-item span { font-size: 10px; width: 18px; text-align: center; color: var(--slate); background: var(--slate-5); padding: 4px 0; font-weight: bold; border-right: 1px solid var(--slate-3); }
+.ak-btn { flex: 1; padding: 8px 0; text-align: center; border: none; background: transparent; font-weight: 800; font-size: 13px; color: var(--gold-dark); cursor: pointer; }
+.ak-btn.empty { color: var(--slate-3); }
+
 /* ================= FULLSCREEN CAMERA ================= */
 #omrCamBox {
   display: none;
@@ -420,6 +426,7 @@ let state = loadState();
 let currentRoute = 'dashboard';
 let viewFilters = { studentSearch:'', studentBatch:'', feeTab:'pending', attBatch:'', attDate: todayISO() };
 let currentOMRResult = null;
+let savedAnswerKey = localStorage.getItem('gvi_answer_key') || '';
 
 function $(s, r=document){ return r.querySelector(s); }
 function $$(s, r=document){ return [...r.querySelectorAll(s)]; }
@@ -746,28 +753,77 @@ function attachAttendance(){
 }
 
 // ===================== OMR SCANNER =====================
+window.cycleAnswer = function(btn) {
+  let val = btn.textContent.trim();
+  if (val === '-') btn.textContent = 'A';
+  else if (val === 'A') btn.textContent = 'B';
+  else if (val === 'B') btn.textContent = 'C';
+  else if (val === 'C') btn.textContent = 'D';
+  else btn.textContent = '-';
+};
+
+function openAnswerKeyModal(){
+  let html = '<div style="font-size:12px; color:var(--slate); margin-bottom:10px;">Option badalne ke liye button par tap karein (A → B → C → D → Blank)</div>';
+  html += '<div class="ak-grid">';
+  for(let i=1; i<=100; i++) {
+    let currentVal = savedAnswerKey[i-1] || '-';
+    if (currentVal === 'X') currentVal = '-';
+    let emptyClass = currentVal === '-' ? 'empty' : '';
+    html += `
+      <div class="ak-item">
+        <span>${i}</span>
+        <button type="button" class="ak-btn ${emptyClass}" data-idx="${i-1}" onclick="cycleAnswer(this); this.classList.toggle('empty', this.textContent.trim() === '-')">${currentVal}</button>
+      </div>
+    `;
+  }
+  html += '</div>';
+
+  openModal({
+    title: 'Set Answer Key (100 Questions)',
+    wide: true,
+    bodyHTML: html,
+    saveLabel: 'Save Key',
+    onSave: () => {
+      let arr = new Array(100).fill('X');
+      document.querySelectorAll('.ak-btn').forEach(btn => {
+        let idx = parseInt(btn.getAttribute('data-idx'));
+        let val = btn.textContent.trim();
+        arr[idx] = (val === '-') ? 'X' : val;
+      });
+      savedAnswerKey = arr.join('');
+      localStorage.setItem('gvi_answer_key', savedAnswerKey);
+      toast('Answer key saved ✓', 'success');
+      render(); // Refresh UI to show "Key Set" badge
+    }
+  });
+}
+
 function renderOMR(){
+  let isKeySet = savedAnswerKey.length === 100 && !savedAnswerKey.includes('X');
+  let keyBadge = isKeySet 
+    ? `<span class="badge badge-success">✅ Key Set</span>` 
+    : `<span class="badge badge-warning">⚠️ Key Not Set</span>`;
+
   return `
     <div class="card">
-      <div class="card-header"><div class="card-title">🔑 Step 1: Answer Key Set Karein</div></div>
+      <div class="card-header">
+        <div class="card-title">🔑 Step 1: Answer Key</div>
+        <div style="margin-left:auto">${keyBadge}</div>
+      </div>
       <div class="card-body">
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Student Name</label>
-            <input type="text" id="omrStudentName" placeholder="Enter student name">
-          </div>
-          <div class="form-group">
-            <label>Sahi Jawab (Options: A, B, C, D)</label>
-            <input type="text" id="omrAnsKey" placeholder="Jaise: ABCDABCDAB" style="text-transform:uppercase" oninput="this.value = this.value.replace(/[^A-D]/g, '')">
-          </div>
-        </div>
+        <p style="font-size:13px;color:var(--slate);margin-bottom:12px">100 Questions ki Answer Key set karein.</p>
+        <button class="btn btn-primary" id="openKeyBtn">✏️ Set 100 Answers</button>
       </div>
     </div>
 
     <div class="card">
       <div class="card-header"><div class="card-title">📷 Step 2: Sheet Scan Karein (Full Screen)</div></div>
       <div class="card-body">
-        <p style="font-size:13px;color:var(--slate);margin-bottom:12px">Camera full screen me khulega. Paper ko border ke andar set karein.</p>
+        <p style="font-size:13px;color:var(--slate);margin-bottom:12px">Camera full screen me khulega. Paper ke 4 black corners ko dashed border ke andar rakhein.</p>
+        <div class="form-group" style="margin-bottom:12px">
+          <label>Student Name</label>
+          <input type="text" id="omrStudentName" placeholder="Enter student name">
+        </div>
         <div style="display:flex;gap:10px;margin-bottom:16px">
           <button class="btn btn-primary" id="omrStartCam">Start Camera</button>
         </div>
@@ -800,7 +856,14 @@ function attachOMR(){
   const canvas = $('#omrCanvas');
   const camBox = $('#omrCamBox');
   
+  $('#openKeyBtn')?.addEventListener('click', openAnswerKeyModal);
+
   $('#omrStartCam')?.addEventListener('click', async () => {
+    if(!savedAnswerKey || savedAnswerKey.includes('X')) {
+      toast('Pehle 100 Questions ki Answer Key set karein!', 'error');
+      return;
+    }
+
     try {
       omrVideoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
       video.srcObject = omrVideoStream;
@@ -816,16 +879,14 @@ function attachOMR(){
 
   $('#omrCapture')?.addEventListener('click', () => {
     const name = $('#omrStudentName').value.trim() || 'Unknown';
-    const key = $('#omrAnsKey').value.trim();
+    const key = savedAnswerKey;
     
-    if(key.length < 1) { toast('Pehle Answer Key likhein!','error'); return; }
     if(typeof cv === 'undefined') { toast('AI load ho raha hai, 5 sec wait karein...','error'); return; }
     
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     canvas.getContext('2d').drawImage(video, 0, 0);
     
-    // Hide camera and show result
     camBox.style.display = 'none';
     if(omrVideoStream) omrVideoStream.getTracks().forEach(t => t.stop());
 
@@ -897,7 +958,7 @@ function processAdvancedOMR(canvas, studentName, answerKey) {
         bottom[1].x, bottom[1].y, bottom[0].x, bottom[0].y
       ]);
       
-      let width = 800, height = 1100; 
+      let width = 1000, height = 1414; // A4 aspect ratio
       let dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, width, 0, width, height, 0, height]);
       let M = cv.getPerspectiveTransform(srcTri, dstTri);
       let warped = new cv.Mat();
@@ -905,30 +966,104 @@ function processAdvancedOMR(canvas, studentName, answerKey) {
       
       let warpedGray = new cv.Mat();
       cv.cvtColor(warped, warpedGray, cv.COLOR_RGBA2GRAY);
+      
       let thresh = new cv.Mat();
       cv.adaptiveThreshold(warpedGray, thresh, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 15, 5);
 
-      let totalQ = answerKey.length;
-      let filledCount = 0;
-      
       let c2 = new cv.MatVector();
       let h2 = new cv.Mat();
       cv.findContours(thresh, c2, h2, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
       
+      let bubbles = [];
       for (let i = 0; i < c2.size(); ++i) {
         let cnt = c2.get(i);
-        let area = cv.contourArea(cnt);
-        if (area > 100 && area < 2000) {
-           let mask = cv.Mat.zeros(thresh.rows, thresh.cols, cv.CV_8UC1);
-           cv.drawContours(mask, c2, i, new cv.Scalar(255), -1);
-           if (cv.mean(thresh, mask)[0] > 60) filledCount++;
-           mask.delete();
+        let rect = cv.boundingRect(cnt);
+        
+        // Filter: ignore instructions (top 40%), bubble size roughly 10-40px
+        if (rect.y > height * 0.40 && rect.width > 12 && rect.width < 40 && rect.height > 12 && rect.height < 40) {
+          let aspect = rect.width / rect.height;
+          if (aspect > 0.7 && aspect < 1.3) { 
+            let mask = cv.Mat.zeros(thresh.rows, thresh.cols, cv.CV_8UC1);
+            cv.drawContours(mask, c2, i, new cv.Scalar(255), -1);
+            let mean = cv.mean(thresh, mask)[0];
+            
+            bubbles.push({
+              x: rect.x,
+              y: rect.y,
+              filled: mean > 80,
+              mean: mean
+            });
+            mask.delete();
+          }
         }
         cnt.delete();
       }
       
-      let score = Math.min(filledCount, totalQ); 
-      if(score === 0) score = Math.floor(Math.random() * totalQ); 
+      // Sort bubbles top-to-bottom, then left-to-right
+      bubbles.sort((a, b) => {
+        if (Math.abs(a.y - b.y) < 15) {
+          return a.x - b.x;
+        }
+        return a.y - b.y;
+      });
+      
+      // Group into rows
+      let rows = [];
+      let currentRow = [];
+      let lastY = -1;
+      
+      for (let b of bubbles) {
+        if (lastY === -1 || Math.abs(b.y - lastY) < 15) {
+          currentRow.push(b);
+        } else {
+          if (currentRow.length > 0) {
+            currentRow.sort((a, b) => a.x - b.x);
+            rows.push(currentRow);
+          }
+          currentRow = [b];
+        }
+        lastY = b.y;
+      }
+      if (currentRow.length > 0) {
+        currentRow.sort((a, b) => a.x - b.x);
+        rows.push(currentRow);
+      }
+      
+      let studentAnswers = new Array(100).fill(null);
+      
+      // Expecting 20 rows, each with 20 bubbles
+      if (rows.length >= 20) {
+         for (let r = 0; r < 20; r++) {
+             let row = rows[r];
+             if (row.length >= 20) {
+                 for (let col = 0; col < 5; col++) {
+                     let qIndex = col * 20 + r; 
+                     let startBubble = col * 4;
+                     let marked = null;
+                     let maxMean = 80;
+                     
+                     for (let b = 0; b < 4; b++) {
+                         let bubble = row[startBubble + b];
+                         if (bubble && bubble.filled && bubble.mean > maxMean) {
+                             marked = startBubble + b;
+                             maxMean = bubble.mean;
+                         }
+                     }
+                     if (marked !== null) {
+                         studentAnswers[qIndex] = String.fromCharCode(65 + (marked - startBubble)); 
+                     }
+                 }
+             }
+         }
+      }
+      
+      let score = 0;
+      let totalQ = 100;
+      for (let i = 0; i < totalQ; i++) {
+         if (studentAnswers[i] && studentAnswers[i] === answerKey[i]) {
+             score++;
+         }
+      }
       
       $('#omrFinalScore').textContent = `${score} / ${totalQ}`;
       $('#omrSaveBtn').style.display = 'inline-block';
