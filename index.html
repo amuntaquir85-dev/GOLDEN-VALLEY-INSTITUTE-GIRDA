@@ -675,7 +675,7 @@ let omrVideoStream = null;
 let scanAnimId = null;
 let isScanning = false;
 let stabilityCounter = 0;
-const REQUIRED_STABILITY = 15; // Fast scanning (0.5 seconds)
+const REQUIRED_STABILITY = 10; // Fast detection
 
 function playBeep() {
   try {
@@ -768,7 +768,6 @@ function scanLoop() {
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
     cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
     
-    // Dynamic Canny
     let median = cv.mean(blurred)[0];
     let lower = Math.max(0, (1 - 0.33) * median);
     let upper = Math.min(255, (1 + 0.33) * median);
@@ -803,18 +802,14 @@ function scanLoop() {
     
     src.delete(); gray.delete(); blurred.delete(); edges.delete(); contours.delete(); hierarchy.delete();
     
-    // Draw Overlay
     overlay.width = overlay.clientWidth;
     overlay.height = overlay.clientHeight;
     let oCtx = overlay.getContext('2d');
     oCtx.clearRect(0, 0, overlay.width, overlay.height);
     
     if (bestPoly) {
-      // KONE SORT KARNA (TAAKI GHUME NAHI)
       let pts = [];
-      for(let i=0; i<4; i++) {
-        pts.push({ x: bestPoly.data32S[i*2], y: bestPoly.data32S[i*2+1] });
-      }
+      for(let i=0; i<4; i++) pts.push({ x: bestPoly.data32S[i*2], y: bestPoly.data32S[i*2+1] });
       
       pts.sort((a, b) => (a.x + a.y) - (b.x + b.y));
       let tl = pts[0], br = pts[3];
@@ -851,7 +846,7 @@ function scanLoop() {
       if (stabilityCounter >= REQUIRED_STABILITY) {
          captureOMR(); 
          if(bestPoly) bestPoly.delete();
-         return; // Stop loop
+         return; 
       }
       bestPoly.delete();
     } else {
@@ -876,9 +871,10 @@ function captureOMR() {
   const spinner = $('#omrProcessing');
   const name = $('#omrStudentName').value.trim() || 'Unknown';
   
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  canvas.getContext('2d').drawImage(video, 0, 0);
+  // Size down the canvas before drawing to prevent mobile memory crash
+  canvas.width = 800; 
+  canvas.height = 1000;
+  canvas.getContext('2d').drawImage(video, 0, 0, 800, 1000);
   
   if(omrVideoStream) {
     omrVideoStream.getTracks().forEach(t => t.stop());
@@ -895,99 +891,25 @@ function captureOMR() {
     $('#omrSaveBtn').style.display = 'none';
     $('#omrPreviewImg').src = '';
     processAdvancedOMR(canvas, name);
-  }, 300);
+  }, 200);
 }
 
-// ULTIMATE OMR READING ALGORITHM (Fixed Grid, No Crash)
+// ULTIMATE OMR READING ALGORITHM (Fixed for Red Sheet & Memory Safety)
 function processAdvancedOMR(canvas, studentName) {
   try {
     let src = cv.imread(canvas);
     let gray = new cv.Mat();
-    let edges = new cv.Mat();
     
+    // 1. Convert to Gray
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-    cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
     
-    let median = cv.mean(gray)[0];
-    let lower = Math.max(0, (1 - 0.33) * median);
-    let upper = Math.min(255, (1 + 0.33) * median);
-    cv.Canny(gray, edges, lower, upper);
+    // 2. Heavy Blur to remove red lines and noise
+    let blurred = new cv.Mat();
+    cv.GaussianBlur(gray, blurred, new cv.Size(7, 7), 0, 0, cv.BORDER_DEFAULT);
     
-    let kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
-    cv.dilate(edges, edges, kernel);
-    
-    let contours = new cv.MatVector();
-    let hierarchy = new cv.Mat();
-    cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-    
-    let maxArea = 0;
-    let maxContour = null;
-    let imgArea = canvas.width * canvas.height;
-    
-    for (let i = 0; i < contours.size(); ++i) {
-      let cnt = contours.get(i);
-      let area = cv.contourArea(cnt);
-      
-      if (area > imgArea * 0.10) { 
-        let perimeter = cv.arcLength(cnt, true);
-        let approx = new cv.Mat();
-        cv.approxPolyDP(cnt, approx, 0.05 * perimeter, true); 
-        
-        if (approx.rows === 4) { 
-          if (area > maxArea) {
-            maxArea = area;
-            if (maxContour) maxContour.delete();
-            maxContour = approx.clone();
-          }
-        }
-        approx.delete();
-      }
-      cnt.delete();
-    }
-    
-    let warped = new cv.Mat();
-    
-    if (maxContour && maxArea > 10000) {
-      let pts = [];
-      for (let i = 0; i < 4; i++) pts.push({ x: maxContour.data32S[i * 2], y: maxContour.data32S[i * 2 + 1] });
-      
-      pts.sort((a, b) => (a.x + a.y) - (b.x + b.y));
-      let tl = pts[0], br = pts[3];
-      pts.sort((a, b) => (a.x - a.y) - (b.x - b.y));
-      let tr = pts[3], bl = pts[0];
-      
-      let srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [tl.x, tl.y, tr.x, tr.y, br.x, br.y, bl.x, bl.y]);
-      let width = 1000, height = 1414; 
-      let dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, width, 0, width, height, 0, height]);
-      let M = cv.getPerspectiveTransform(srcTri, dstTri);
-      cv.warpPerspective(src, warped, M, new cv.Size(width, height));
-      
-      M.delete(); dstTri.delete(); srcTri.delete();
-    } else {
-      // Fallback: If paper not found, crop center
-      let width = 1000, height = 1414;
-      let cropX = Math.floor(canvas.width * 0.10);
-      let cropY = Math.floor(canvas.height * 0.15);
-      let cropW = Math.floor(canvas.width * 0.80);
-      let cropH = Math.floor(canvas.height * 0.70);
-      
-      let rect = new cv.Rect(cropX, cropY, cropW, cropH);
-      let cropped = src.roi(rect);
-      cv.resize(cropped, warped, new cv.Size(width, height));
-      cropped.delete();
-    }
-    
-    // Show Preview
-    let previewCanvas = document.createElement('canvas');
-    cv.imshow(previewCanvas, warped);
-    $('#omrPreviewImg').src = previewCanvas.toDataURL('image/jpeg', 0.7);
-
-    let warpedGray = new cv.Mat();
-    cv.cvtColor(warped, warpedGray, cv.COLOR_RGBA2GRAY);
-    
-    // SIMPLE & SAFE THRESHOLD (No Otsu to avoid crash)
+    // 3. Thresholding (Otsu is best for Black & White) to isolate black bubbles
     let thresh = new cv.Mat();
-    cv.threshold(warpedGray, thresh, 130, 255, cv.THRESH_BINARY_INV);
+    cv.threshold(blurred, thresh, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU);
 
     let c2 = new cv.MatVector();
     let h2 = new cv.Mat();
@@ -998,27 +920,23 @@ function processAdvancedOMR(canvas, studentName) {
       let cnt = c2.get(i);
       let rect = cv.boundingRect(cnt);
       
-      // Filter strictly by size and position
-      if (rect.y > height * 0.35 && rect.width > 15 && rect.width < 45 && rect.height > 15 && rect.height < 45) {
+      // Size filter (Ignore tiny noise and big blocks)
+      if (rect.y > 250 && rect.width > 10 && rect.width < 35 && rect.height > 10 && rect.height < 35) {
         let aspect = rect.width / rect.height;
         if (aspect > 0.7 && aspect < 1.3) { 
-          let mask = cv.Mat.zeros(thresh.rows, thresh.cols, cv.CV_8UC1);
-          cv.drawContours(mask, c2, i, new cv.Scalar(255), -1);
-          let mean = cv.mean(warpedGray, mask)[0]; // Use Gray, not Thresh
-          mask.delete();
-          bubbles.push({ x: rect.x + rect.width/2, y: rect.y + rect.height/2, mean: mean });
+          bubbles.push({ x: rect.x + rect.width/2, y: rect.y + rect.height/2 });
         }
       }
       cnt.delete();
     }
     
-    // Sort strictly by Y, then X
-    bubbles.sort((a, b) => Math.abs(a.y - b.y) < 20 ? a.x - b.x : a.y - b.y);
+    // Sort by Y, then X
+    bubbles.sort((a, b) => Math.abs(a.y - b.y) < 15 ? a.x - b.x : a.y - b.y);
     
     let rows = [], currentRow = [], lastY = -1;
     
     for (let b of bubbles) {
-      if (lastY === -1 || Math.abs(b.y - lastY) < 20) {
+      if (lastY === -1 || Math.abs(b.y - lastY) < 15) {
         currentRow.push(b);
       } else {
         if (currentRow.length > 0) { currentRow.sort((a, b) => a.x - b.x); rows.push(currentRow); }
@@ -1030,26 +948,19 @@ function processAdvancedOMR(canvas, studentName) {
     
     let studentAnswers = new Array(100).fill('-');
     
-    // Process exactly 20 rows (BSEB pattern)
+    // Map perfectly to 20 rows
     for (let r = 0; r < Math.min(rows.length, 20); r++) {
         let row = rows[r];
-        // Ensure we have enough bubbles in the row (should be 20)
         if (row.length >= 20) {
             for (let col = 0; col < 5; col++) {
                 let qIndex = col * 20 + r; 
                 let startBubble = col * 4;
-                let marked = null;
-                let darkestMean = 150; // Threshold for dark bubble
-                
+                // We already filtered for dark bubbles, so if it exists in this group of 4, mark it
                 for (let b = 0; b < 4; b++) {
-                    let bubble = row[startBubble + b];
-                    if (bubble && bubble.mean < darkestMean) {
-                        darkestMean = bubble.mean;
-                        marked = b;
+                    if (row[startBubble + b]) {
+                        studentAnswers[qIndex] = String.fromCharCode(65 + b);
+                        break; 
                     }
-                }
-                if (marked !== null) {
-                    studentAnswers[qIndex] = String.fromCharCode(65 + marked); 
                 }
             }
         }
@@ -1066,13 +977,15 @@ function processAdvancedOMR(canvas, studentName) {
     $('#omrSaveBtn').style.display = 'inline-block';
     currentOMRResult = { name: studentName, score: score, total: totalQ, date: todayISO() };
     
-    warped.delete(); warpedGray.delete(); thresh.delete(); c2.delete(); h2.delete();
-    src.delete(); gray.delete(); edges.delete(); contours.delete(); hierarchy.delete();
-    if(maxContour) maxContour.delete();
+    // Show Preview (just the original for now to save memory)
+    $('#omrPreviewImg').src = canvas.toDataURL('image/jpeg', 0.5);
+    
+    thresh.delete(); c2.delete(); h2.delete();
+    src.delete(); gray.delete(); blurred.delete();
     
   } catch(e) { 
     console.error(e); 
-    $('#omrFinalScore').textContent = "Error: " + e.message; 
+    $('#omrFinalScore').textContent = "Error! Read again."; 
   }
 }
 
