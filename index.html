@@ -7,6 +7,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <title>Golden Valley Institute — Management System</title>
 <style>
+/* ===== MAIN APP CSS ===== */
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --gold:#f59e0b; --gold-dark:#d97706; --gold-light:#fbbf24;
@@ -207,19 +208,82 @@ tbody tr:last-child td{border-bottom:none}
 }
 .sidebar-toggle{display:none;width:36px;height:36px;border-radius:8px;background:var(--navy);color:#fff;font-size:18px;place-items:center}
 
-/* IFRAME STYLES */
-#omrIframe {
-  width: 100%;
-  height: calc(100vh - 130px);
-  border: none;
-  border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+/* ===== OMR APP CSS (Scoped) ===== */
+#omr-view {
+    --bg:#f3f5fb; --fg:#14213d; --card:#fff; --line:#d5dbea; --ac:#1a2f6b; --ac2:#e8b923; --ok:#1b8a3a; --bad:#c62828; --mut:#5b6580; 
+    box-sizing:border-box; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    padding: 10px; height: 100%; overflow-y: auto; display: block;
 }
-@media (max-width: 900px) {
-  #omrIframe {
-    height: calc(100vh - 160px);
-  }
+@media (prefers-color-scheme:dark){#omr-view{--bg:#0f1424;--fg:#e8ecf8;--card:#182038;--line:#2c3556;--ac:#8fb0ff;--ac2:#e8b923;--ok:#58d27a;--bad:#ff6b6b;--mut:#9aa6c8}}
+#omr-view header{background:linear-gradient(135deg,#1a2f6b,#2d4ba0);color:#fff;text-align:center;padding:22px 14px;border-bottom:4px solid var(--ac2); border-radius: 8px;}
+#omr-view header h1{margin:0;font-size:clamp(20px,5vw,30px);letter-spacing:.06em}
+#omr-view header p{margin:4px 0 0;opacity:.85;font-size:13px}
+#omr-view main{max-width:1000px;margin:0 auto;padding:14px 0;}
+#omr-view .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:none}
+#omr-view h2{margin:0 0 10px;font-size:17px;color:var(--ac)}
+#omr-view .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
+#omr-view label{font-size:13px;color:var(--mut)}
+#omr-view input[type=number],#omr-view textarea{background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;font:inherit}
+#omr-view input[type=number]{width:80px}
+#omr-view textarea{width:100%;min-height:60px;font-family:ui-monospace,monospace;font-size:13px}
+#omr-view button,#omr-view .btn{background:var(--ac);color:#fff;border:0;border-radius:8px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer}
+#omr-view button.sec{background:transparent;color:var(--ac);border:1px solid var(--ac)}
+#omr-view button.on{background:var(--ac2);color:#14213d;border-color:var(--ac2)}
+#omr-view .sets button{min-width:44px}
+#omr-view .keygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:4px 14px;max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:8px}
+#omr-view .kq{display:flex;align-items:center;gap:4px;font-size:13px}
+#omr-view .kq b{width:28px;text-align:right;color:var(--mut)}
+#omr-view .kq i{font-style:normal;width:26px;height:26px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;cursor:pointer;font-size:12px}
+#omr-view .kq i.s{background:var(--ac);color:#fff;border-color:var(--ac)}
+#omr-view .drop{border:2px dashed var(--ac);border-radius:12px;padding:22px;text-align:center;cursor:pointer}
+#omr-view .drop input{display:none}
+#omr-view .tw{overflow-x:auto}
+#omr-view table{border-collapse:collapse;width:100%;font-size:13px}
+#omr-view th,#omr-view td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+#omr-view th{color:var(--mut);font-weight:600;background:transparent}
+#omr-view td.l{text-align:left}
+#omr-view .sc{font-weight:700;color:var(--ac)}
+#omr-view .err{color:var(--bad)}
+#omr-view #stat{font-size:13px;color:var(--mut)}
+#omr-view #view canvas{width:100%;border:1px solid var(--line);border-radius:8px}
+#omr-view .leg span{display:inline-block;margin-right:12px;font-size:12px}
+#omr-view .leg u{display:inline-block;width:12px;height:12px;border-radius:50%;border:3px solid;margin-right:4px;vertical-align:-2px}
+#omr-view #camwrap{position:relative;max-width:640px;margin-top:10px}
+#omr-view #vid{width:100%;display:block;border-radius:8px;background:#000}
+#omr-view #ov{position:absolute;inset:0;width:100%;height:100%}
+#omr-view #cstat{font-size:14px;font-weight:600;color:var(--ac)}
+#omr-view .card input:not([type=file]):not([type=range]):not([type=number]){background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;font:inherit;min-width:110px}
+#omr-view .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+#omr-view .chips div{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:12px;color:var(--mut)}
+#omr-view .chips b{display:block;font-size:16px;color:var(--ac)}
+#omr-view td[contenteditable]{cursor:text}
+#omr-view td[contenteditable]:focus{outline:2px solid var(--ac2);background:var(--bg)}
+#omr-view .rs{background:#fff;color:#111;border:2px solid #a4161a;padding:18px;margin:10px 0;page-break-after:always;font-size:13px}
+#omr-view .rh{text-align:center;border-bottom:3px double #a4161a;margin-bottom:10px;padding-bottom:6px}
+#omr-view .rh h1{margin:0;color:#a4161a;font-size:22px;letter-spacing:.05em}
+#omr-view .it,#omr-view .sm{width:100%;border-collapse:collapse;margin:8px 0}
+#omr-view .it td,#omr-view .sm td,#omr-view .sm th{border:1px solid #999;padding:6px 8px;color:#111;text-align:left}
+#omr-view .sm th{background:#fbeeee;text-align:center;color:#111}
+#omr-view .sm td{text-align:center}
+#omr-view .sm td.l{text-align:left}
+#omr-view .res{text-align:center;font-weight:700;font-size:16px;padding:8px;margin:8px 0;border:2px solid}
+#omr-view .res.p{color:#1b7a34}
+#omr-view .res.f{color:#c62828}
+#omr-view .qg{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;font-size:10px;margin-top:8px}
+#omr-view .qg span{padding:1px 2px;border:1px solid #ccc;color:#111}
+#omr-view .qg .g{background:#e4f6e8}
+#omr-view .qg .x{background:#fde5e5}
+#omr-view .qg .n{background:#f1f1f1}
+#omr-view .sg{display:flex;justify-content:space-between;margin-top:46px}
+#omr-view .sg span{border-top:1px solid #111;padding-top:4px;width:28%;text-align:center;color:#111}
+#omr-view #pa{display:none}
+#omr-view footer{text-align:center;color:var(--mut);font-size:12px;padding:10px 0 24px}
+@media print{
+    body.printing>*:not(#pa){display:none!important}
+    body.printing #omr-view #pa{display:block!important}
+    body{background:#fff}
+    #omr-view .rs{margin:0}
+    @page{size:A4;margin:10mm}
 }
 </style>
 </head>
@@ -279,341 +343,6 @@ tbody tr:last-child td{border-bottom:none}
 
 <div class="modal-overlay" id="modalOverlay"></div>
 <div class="toast" id="toast"></div>
-
-<!-- HIDDEN TEMPLATE FOR THE NEW OMR PRO APP -->
-<template id="omr-template">
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>OMR Checker</title>
-<style>
-:root{--bg:#f3f5fb;--fg:#14213d;--card:#fff;--line:#d5dbea;--ac:#1a2f6b;--ac2:#e8b923;--ok:#1b8a3a;--bad:#c62828;--mut:#5b6580;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1424;--fg:#e8ecf8;--card:#182038;--line:#2c3556;--ac:#8fb0ff;--ac2:#e8b923;--ok:#58d27a;--bad:#ff6b6b;--mut:#9aa6c8}}
-:root[data-theme="dark"]{--bg:#0f1424;--fg:#e8ecf8;--card:#182038;--line:#2c3556;--ac:#8fb0ff;--ac2:#e8b923;--ok:#58d27a;--bad:#ff6b6b;--mut:#9aa6c8}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; padding: 10px;}
-header{background:linear-gradient(135deg,#1a2f6b,#2d4ba0);color:#fff;text-align:center;padding:22px 14px;border-bottom:4px solid var(--ac2); border-radius: 8px;}
-header h1{margin:0;font-size:clamp(20px,5vw,30px);letter-spacing:.06em}
-header p{margin:4px 0 0;opacity:.85;font-size:13px}
-main{max-width:1000px;margin:0 auto;padding:14px 0;}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
-h2{margin:0 0 10px;font-size:17px;color:var(--ac)}
-.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
-label{font-size:13px;color:var(--mut)}
-input[type=number],textarea{background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;font:inherit}
-input[type=number]{width:80px}
-textarea{width:100%;min-height:60px;font-family:ui-monospace,monospace;font-size:13px}
-button,.btn{background:var(--ac);color:#fff;border:0;border-radius:8px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer}
-:root[data-theme="dark"] button,:root[data-theme="dark"] .btn{color:#0f1424}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) button,:root:not([data-theme="light"]) .btn{color:#0f1424}}
-button.sec{background:transparent;color:var(--ac);border:1px solid var(--ac)}
-button.on{background:var(--ac2);color:#14213d;border-color:var(--ac2)}
-.sets button{min-width:44px}
-.keygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:4px 14px;max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:8px}
-.kq{display:flex;align-items:center;gap:4px;font-size:13px}
-.kq b{width:28px;text-align:right;color:var(--mut)}
-.kq i{font-style:normal;width:26px;height:26px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;cursor:pointer;font-size:12px}
-.kq i.s{background:var(--ac);color:#fff;border-color:var(--ac)}
-:root[data-theme="dark"] .kq i.s{color:#0f1424}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .kq i.s{color:#0f1424}}
-.drop{border:2px dashed var(--ac);border-radius:12px;padding:22px;text-align:center;cursor:pointer}
-.drop input{display:none}
-.tw{overflow-x:auto}
-table{border-collapse:collapse;width:100%;font-size:13px}
-th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
-th{color:var(--mut);font-weight:600}
-td.l{text-align:left}
-.sc{font-weight:700;color:var(--ac)}
-.err{color:var(--bad)}
-#stat{font-size:13px;color:var(--mut)}
-#view canvas{width:100%;border:1px solid var(--line);border-radius:8px}
-.leg span{display:inline-block;margin-right:12px;font-size:12px}
-.leg u{display:inline-block;width:12px;height:12px;border-radius:50%;border:3px solid;margin-right:4px;vertical-align:-2px}
-#camwrap{position:relative;max-width:640px;margin-top:10px}#vid{width:100%;display:block;border-radius:8px;background:#000}#ov{position:absolute;inset:0;width:100%;height:100%}
-#cstat{font-size:14px;font-weight:600;color:var(--ac)}
-.card input:not([type=file]):not([type=range]):not([type=number]){background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;font:inherit;min-width:110px}
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}.chips div{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:12px;color:var(--mut)}.chips b{display:block;font-size:16px;color:var(--ac)}
-td[contenteditable]{cursor:text}td[contenteditable]:focus{outline:2px solid var(--ac2);background:var(--bg)}
-.rs{background:#fff;color:#111;border:2px solid #a4161a;padding:18px;margin:10px 0;page-break-after:always;font-size:13px}
-.rh{text-align:center;border-bottom:3px double #a4161a;margin-bottom:10px;padding-bottom:6px}.rh h1{margin:0;color:#a4161a;font-size:22px;letter-spacing:.05em}
-.it,.sm{width:100%;border-collapse:collapse;margin:8px 0}.it td,.sm td,.sm th{border:1px solid #999;padding:6px 8px;color:#111;text-align:left}.sm th{background:#fbeeee;text-align:center;color:#111}.sm td{text-align:center}.sm td.l{text-align:left}
-.res{text-align:center;font-weight:700;font-size:16px;padding:8px;margin:8px 0;border:2px solid}.res.p{color:#1b7a34}.res.f{color:#c62828}
-.qg{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;font-size:10px;margin-top:8px}.qg span{padding:1px 2px;border:1px solid #ccc;color:#111}.qg .g{background:#e4f6e8}.qg .x{background:#fde5e5}.qg .n{background:#f1f1f1}
-.sg{display:flex;justify-content:space-between;margin-top:46px}.sg span{border-top:1px solid #111;padding-top:4px;width:28%;text-align:center;color:#111}
-#pa{display:none}
-@media print{body.printing>*:not(#pa){display:none!important}body.printing #pa{display:block!important}body{background:#fff}.rs{margin:0}@page{size:A4;margin:10mm}}
-footer{text-align:center;color:var(--mut);font-size:12px;padding:10px 0 24px}
-</style>
-</head>
-<body>
-<header>
-<h1>GOLDEN VALLEY INSTITUTE</h1>
-<p>Smart OMR Checker · Rank · Percentage · Result Sheets · BSEB Pattern</p>
-</header>
-<main>
-
-<section class="card">
-<h2>Step 1 – Set the answer key</h2>
-<div class="row sets"><label>Paper set:</label>
-<button data-set="A" class="on">A</button><button data-set="B" class="sec">B</button><button data-set="C" class="sec">C</button><button data-set="D" class="sec">D</button>
-<label style="margin-left:auto">Marks / correct</label><input type="number" id="mk" value="1" step="0.25">
-<label>Negative / wrong</label><input type="number" id="ng" value="0" step="0.25" min="0">
-</div>
-<label>Quick paste (e.g. ABCDDACB… in order of questions 1–100; use - to skip a question)</label>
-<textarea id="paste" placeholder="ABCDABCD…"></textarea>
-<div class="row" style="margin-top:8px"><button id="apply">Apply pasted key</button><button class="sec" id="clr">Clear this set</button><span id="kc" style="font-size:13px;color:var(--mut)"></span></div>
-<div class="keygrid" id="kg"></div>
-</section>
-
-<section class="card">
-<h2>Step 2 – Students &amp; exam details</h2>
-<div class="row"><input id="ex" placeholder="Exam name" style="flex:2"><input id="cl" placeholder="Class"><input id="sj" placeholder="Subject"><input type="date" id="dt"></div>
-<label>Student list – one per line: Roll Code, Roll No., Name, Father’s name (or just: Roll No., Name)</label>
-<textarea id="ro" placeholder="10101,2605010123,Rahul Kumar,Suresh Kumar"></textarea>
-<div class="row" style="margin-top:8px"><button id="rsv">Save student list</button><label class="btn" style="background:transparent;color:var(--ac);border:1px solid var(--ac)">Import CSV<input type="file" id="rf" accept=".csv,.txt" hidden></label><span id="rc" style="font-size:13px;color:var(--mut)"></span></div>
-</section>
-
-<section class="card">
-<h2>Step 3 – Scan directly with camera</h2>
-<div class="row"><button id="cam">Start live camera</button>
-<label class="btn" style="background:transparent;color:var(--ac);border:1px solid var(--ac)">Take photo<input type="file" id="cp" accept="image/*" capture="environment" hidden></label></div>
-<div id="cstat">Live camera auto-detects the sheet, scans it when steady and beeps. Keep all 4 black corner squares inside the frame.</div>
-<div id="camwrap" hidden><video id="vid" playsinline muted></video><canvas id="ov"></canvas></div>
-</section>
-
-<section class="card">
-<h2>Or upload scanned / photographed sheets</h2>
-<label class="drop" id="dz"><input type="file" id="fi" accept="image/*" multiple>
-<div style="font-size:30px">📄</div><div><b>Tap to choose images</b> (or drag and drop)</div>
-<div style="font-size:12px;color:var(--mut)">Use the new BSEB-style Golden Valley OMR sheet (5 columns × 20 questions). Sheet must be upright, all 4 black corner squares visible, good light, no shadow.</div></label>
-<div class="row" style="margin-top:10px"><label>Mark sensitivity</label><input type="range" id="sens" min="0.1" max="0.5" step="0.01" value="0.25"><span id="stat"></span></div>
-</section>
-
-<section class="card" id="res" hidden>
-<h2>Step 4 – Result, rank &amp; result sheets</h2>
-<div id="st" class="chips"></div>
-<div class="row"><button id="pml">Merit list (print)</button><button id="pall">All result sheets (print)</button><button class="sec" id="csv">Download CSV</button><button class="sec" id="srt">Sort by rank</button><button class="sec" id="rst">Clear all</button></div>
-<div style="font-size:12px;color:var(--mut);margin-bottom:6px">Tip: tap a name, roll code or roll no. in the table to correct it. “Result” opens the printable result sheet.</div>
-<div class="tw"><table><thead><tr><th>Rank</th><th>Name</th><th>Roll Code</th><th>Roll No.</th><th>Set</th><th>Correct</th><th>Wrong</th><th>Blank/Multi</th><th>Marks</th><th>%</th><th>Division</th><th></th></tr></thead><tbody id="tb"></tbody></table></div>
-</section>
-<section class="card" id="sp" hidden></section>
-<div id="pa"></div>
-
-<section class="card" id="view" hidden>
-<h2 id="vt">Sheet view</h2>
-<div class="leg"><span><u style="color:var(--ok)"></u>Correct</span><span><u style="color:var(--bad)"></u>Wrong</span><span><u style="color:#2f7bff"></u>Right answer</span><span><u style="color:#ff9800"></u>Multiple marks</span></div>
-<canvas id="cv"></canvas>
-<div class="row" style="margin-top:10px"><button id="dl">Download marked sheet</button></div>
-</section>
-</main>
-<footer>Golden Valley Institute · Processing happens on your device – images are not uploaded anywhere.</footer>
-
-<script>
-const OPT="ABCD",N=100,PW=595,PH=842;
-const $=s=>document.querySelector(s);
-let keys={A:[],B:[],C:[],D:[]},cur="A",results=[];
-try{const k=JSON.parse(localStorage.getItem("gvi_keys")||"null");if(k)keys=k}catch(e){}
-const save=()=>{try{localStorage.setItem("gvi_keys",JSON.stringify(keys))}catch(e){}};
-
-/* ---------- Answer key UI ---------- */
-function renderKey(){
- const k=keys[cur];let h="";
- for(let q=0;q<N;q++){h+=`<div class="kq"><b>${q+1}</b>`+[...OPT].map(o=>`<i data-q="${q}" data-o="${o}" class="${k[q]===o?"s":""}">${o}</i>`).join("")+`</div>`}
- $("#kg").innerHTML=h;
- $("#kc").textContent=k.filter(Boolean).length+" / 100 answers set for Set "+cur;
-}
-$("#kg").onclick=e=>{const t=e.target;if(t.tagName!=="I")return;const q=+t.dataset.q,o=t.dataset.o;
- keys[cur][q]=keys[cur][q]===o?"":o;save();renderKey();rescore()};
-document.querySelectorAll("[data-set]").forEach(b=>b.onclick=()=>{cur=b.dataset.set;
- document.querySelectorAll("[data-set]").forEach(x=>x.className=x===b?"on":"sec");renderKey()});
-$("#apply").onclick=()=>{const s=($("#paste").value||"").toUpperCase().replace(/[^ABCD\-]/g,"");
- keys[cur]=Array.from({length:N},(_,i)=>OPT.includes(s[i])?s[i]:"");save();renderKey();rescore()};
-$("#clr").onclick=()=>{keys[cur]=[];save();renderKey();rescore()};
-["mk","ng"].forEach(i=>$("#"+i).oninput=rescore);
-$("#sens").oninput=rescore;
-
-/* ---------- Image helpers ---------- */
-function loadImg(f){return new Promise((ok,no)=>{const u=URL.createObjectURL(f),im=new Image();im.onload=()=>{URL.revokeObjectURL(u);ok(im)};im.onerror=()=>no(new Error("Cannot read image"));im.src=u})}
-function otsu(g){const h=new Array(256).fill(0);for(let i=0;i<g.length;i+=4)h[g[i]]++;const T=g.length/4;let s=0;for(let i=0;i<256;i++)s+=i*h[i];
- let sb=0,wb=0,m=0,best=0;for(let t=0;t<256;t++){wb+=h[t];if(!wb)continue;const wf=T-wb;if(!wf)break;sb+=t*h[t];const d=(sb/wb-(s-sb)/wf);const v=wb*wf*d*d;if(v>m){m=v;best=t}}return best}
-function findCorner(gray,w,h,thr,x0,y0,rw,rh,cx,cy){
- const seen=new Uint8Array(rw*rh);let best=null,bd=1e9;
- for(let y=0;y<rh;y++)for(let x=0;x<rw;x++){const id=y*rw+x;if(seen[id]||gray[(y0+y)*w+x0+x]>=thr)continue;
-  let st=[id],n=0,mnx=x,mxx=x,mny=y,mxy=y,sx=0,sy=0;seen[id]=1;
-  while(st.length){const p=st.pop(),px=p%rw,py=(p/rw)|0;n++;sx+=px;sy+=py;
-   if(px<mnx)mnx=px;if(px>mxx)mxx=px;if(py<mny)mny=py;if(py>mxy)mxy=py;
-   for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=px+dx,ny=py+dy;if(nx<0||ny<0||nx>=rw||ny>=rh)continue;const q=ny*rw+nx;if(!seen[q]&&gray[(y0+ny)*w+x0+nx]<thr){seen[q]=1;st.push(q)}}}
-  const bw=mxx-mnx+1,bh=mxy-mny+1,fr=n/(bw*bh),ar=bw/bh;
-  if(bw>w*.012&&bw<w*.08&&fr>.72&&ar>.65&&ar<1.5){const px=x0+sx/n,py=y0+sy/n,d=Math.hypot(px-cx,py-cy);if(d<bd){bd=d;best=[px,py]}}}
- return best}
-function homog(S,D){const A=[],b=[];for(let i=0;i<4;i++){const[x,y]=S[i],[u,v]=D[i];
- A.push([x,y,1,0,0,0,-u*x,-u*y]);b.push(u);A.push([0,0,0,x,y,1,-v*x,-v*y]);b.push(v)}
- for(let i=0;i<8;i++){let p=i;for(let r=i+1;r<8;r++)if(Math.abs(A[r][i])>Math.abs(A[p][i]))p=r;[A[i],A[p]]=[A[p],A[i]];[b[i],b[p]]=[b[p],b[i]];
-  for(let r=0;r<8;r++){if(r===i)continue;const f=A[r][i]/A[i][i];for(let c=i;c<8;c++)A[r][c]-=f*A[i][c];b[r]-=f*b[i]}}
- return b.map((v,i)=>v/A[i][i])}
-
-/* ---------- Sheet geometry (matches the printed OMR PDF) ---------- */
-const ansPos=(q,j)=>[45+((q/20)|0)*101+38+j*18,418+(q%20)*18.6];
-const GRIDS=[[45,5],[136,10],[312,3],[369,6]];/* Roll Code, Roll No, Subject Code, Booklet Sl. No */
-const setPos=i=>[513.5,205+i*20];
-
-async function scan(file){
- const im=await loadImg(file),sc=Math.min(1,1600/Math.max(im.width,im.height));
- const cv=document.createElement("canvas");cv.width=Math.round(im.width*sc);cv.height=Math.round(im.height*sc);
- const ctx=cv.getContext("2d",{willReadFrequently:true});ctx.drawImage(im,0,0,cv.width,cv.height);
- return scanCv(cv,file.name)}
-function scanCv(cv,name){
- const ctx=cv.getContext("2d",{willReadFrequently:true});
- const w=cv.width,h=cv.height,d=ctx.getImageData(0,0,w,h).data,gray=new Uint8Array(w*h);
- for(let i=0,j=0;i<d.length;i+=4,j++)gray[j]=(d[i]*.3+d[i+1]*.59+d[i+2]*.11)|0;
- const rgba=new Uint8Array(w*h*4);for(let j=0;j<gray.length;j++)rgba[j*4]=gray[j];
- const thr=Math.min(otsu(rgba)*.85,120),rw=Math.round(w*.3),rh=Math.round(h*.22);
- const tl=findCorner(gray,w,h,thr,0,0,rw,rh,0,0),tr=findCorner(gray,w,h,thr,w-rw,0,rw,rh,w,0),
-  bl=findCorner(gray,w,h,thr,0,h-rh,rw,rh,0,h),br=findCorner(gray,w,h,thr,w-rw,h-rh,rw,rh,w,h);
- if(!(tl&&tr&&bl&&br))throw new Error("4 corner squares not found – retake photo");
- const Hm=homog([[26,26],[569,26],[26,816],[569,816]],[tl,tr,bl,br]);
- const mp=(u,v)=>{const z=Hm[6]*u+Hm[7]*v+1;return[(Hm[0]*u+Hm[1]*v+Hm[2])/z,(Hm[3]*u+Hm[4]*v+Hm[5])/z]};
- const s=Math.hypot(tr[0]-tl[0],tr[1]-tl[1])/543;
- const sorted=Uint8Array.from(gray).sort(),paper=Math.max(sorted[(sorted.length*.9)|0],60);
- const fill=(u,v,r)=>{const[cx,cy]=mp(u,v),R=r*s;let t=0,n=0;
-  for(let y=Math.floor(cy-R);y<=cy+R;y++)for(let x=Math.floor(cx-R);x<=cx+R;x++){if(x<0||y<0||x>=w||y>=h)continue;if((x-cx)**2+(y-cy)**2<=R*R){t+=gray[y*w+x];n++}}
-  return n?Math.max(0,1-(t/n)/paper):0};
- const af=[];for(let q=0;q<N;q++)af.push([0,1,2,3].map(j=>fill(...ansPos(q,j),3.3)));
- const gf=GRIDS.map(g=>Array.from({length:g[1]},(_,i)=>[...Array(10).keys()].map(d=>fill(g[0]+8.5+i*17,198+d*11.6,2.7))));
- const sf=[0,1,2,3].map(i=>fill(...setPos(i),3.8));
- return{name,cv,mp,s,af,gf,sf}}
-
-/* ---------- Evaluate ---------- */
-function evaluate(r){
- const all=r.af.flat().slice().sort((a,b)=>a-b),med=all[all.length>>1],thr=med+ +$("#sens").value;
- r.ans=r.af.map(f=>{const m=f.map((v,i)=>v>thr?i:-1).filter(i=>i>=0);return m.length===0?"":m.length>1?"*":OPT[m[0]]});
- const ga=r.gf.flat(2).sort((a,b)=>a-b),tg=ga[ga.length>>1]+ +$("#sens").value;
- const rd=g=>g.map(col=>{const mx=Math.max(...col);return mx>tg?col.indexOf(mx):"?"}).join("");
- [r.rcode,r.roll,r.sub,r.bk]=r.gf.map(rd);
- const sm=Math.max(...r.sf);r.set=sm>thr?OPT[r.sf.indexOf(sm)]:"A";
- const key=keys[r.set]||[];let c=0,w=0,b=0,m=0;
- r.ans.forEach((a,q)=>{if(!key[q])return;if(a==="*")m++;else if(a==="")b++;else if(a===key[q])c++;else w++});
- const mx=(c+w+b+m)*(+$("#mk").value),sc=c*(+$("#mk").value)-w*(+$("#ng").value);Object.assign(r,{c,w,b,m,score:sc,mx,pct:mx?Math.max(0,sc)/mx*100:0})}
-function rescore(){results.forEach(evaluate);draw();if(sel!=null)show(sel)}
-let sel=null,sortRank=true;
-/* ---------- Students, exam details ---------- */
-let roster={},cfg={exam:"Mock Test \u2013 BSEB Pattern",cls:"",subj:"",date:new Date().toISOString().slice(0,10)};
-try{roster=JSON.parse(localStorage.getItem("gvi_roster")||"{}");Object.assign(cfg,JSON.parse(localStorage.getItem("gvi_cfg")||"{}"))}catch(e){}
-const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const rk=(c,r)=>(c||"")+"-"+r;
-function parseRoster(t){const o={};t.split(/\r?\n/).forEach(l=>{const p=l.split(/[,\t]/).map(x=>x.trim().replace(/^"|"$/g,""));if(p.length<2||/roll/i.test(p[0]))return;
- if(p.length>=3&&/^\d+$/.test(p[0])&&/^\d+$/.test(p[1]))o[rk(p[0],p[1])]={n:p[2],f:p[3]||""};else if(/^\d+$/.test(p[0]))o[rk("",p[0])]={n:p[1],f:p[2]||""}});return o}
-const stu=r=>roster[rk(r.rcode,r.roll)]||roster[rk("",r.roll)]||{n:"",f:""};
-const nm=r=>r.nm!=null?r.nm:stu(r).n;
-const divs=r=>r.pct>=60?"1st Division":r.pct>=45?"2nd Division":r.pct>=30?"3rd Division":"Fail";
-function fr(){$("#ex").value=cfg.exam;$("#cl").value=cfg.cls;$("#sj").value=cfg.subj;$("#dt").value=cfg.date;
- $("#rc").textContent=Object.keys(roster).length+" students saved";
- $("#ro").value=Object.entries(roster).map(([k,v])=>{const[a,b]=k.split("-");return(a?[a,b,v.n,v.f]:[b,v.n,v.f]).join(",")}).join("\n")}
-[["ex","exam"],["cl","cls"],["sj","subj"],["dt","date"]].forEach(([i,k])=>$("#"+i).oninput=e=>{cfg[k]=e.target.value;try{localStorage.setItem("gvi_cfg",JSON.stringify(cfg))}catch(x){}});
-$("#rsv").onclick=()=>{roster=parseRoster($("#ro").value);try{localStorage.setItem("gvi_roster",JSON.stringify(roster))}catch(x){}fr();draw()};
-$("#rf").onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{$("#ro").value=t;$("#rsv").click()});e.target.value=""};
-
-/* ---------- Results table, rank, result sheets ---------- */
-function ranks(){const v=results.filter(r=>!r.err);v.forEach(r=>r.rank=1+v.filter(o=>o.score>r.score).length);return v}
-function draw(){
- const v=ranks();$("#res").hidden=!results.length;
- const ord=results.map((_,i)=>i);if(sortRank)ord.sort((a,b)=>(results[a].err?1e9:results[a].rank)-(results[b].err?1e9:results[b].rank));
- $("#tb").innerHTML=ord.map(i=>{const r=results[i];if(r.err)return `<tr><td></td><td class="l err" colspan="11">${esc(r.name)}: ${esc(r.err)}</td></tr>`;
-  return `<tr><td><b>${r.rank}</b></td><td class="l" contenteditable data-i="${i}" data-f="nm">${esc(nm(r))}</td><td contenteditable data-i="${i}" data-f="rcode">${r.rcode}</td><td contenteditable data-i="${i}" data-f="roll">${r.roll}</td><td>${r.set}</td><td>${r.c}</td><td>${r.w}</td><td>${r.b}/${r.m}</td><td class="sc">${r.score}/${r.mx}</td><td class="sc">${r.pct.toFixed(1)}%</td><td>${divs(r)}</td><td><button class="sec" data-v="${i}">Marks</button> <button data-s="${i}">Result</button></td></tr>`}).join("");
- if(v.length){const top=v.reduce((a,b)=>b.score>a.score?b:a),avg=v.reduce((t,r)=>t+r.pct,0)/v.length,ps=v.filter(r=>r.pct>=30).length;
-  $("#st").innerHTML=`<div><b>${v.length}</b>Students</div><div><b>${top.pct.toFixed(1)}%</b>Topper ${esc(nm(top)||top.roll)}</div><div><b>${avg.toFixed(1)}%</b>Class average</div><div><b>${ps}/${v.length}</b>Passed (30%+)</div>`}}
-$("#tb").addEventListener("focusout",e=>{const t=e.target,i=t.dataset.i;if(i==null)return;const r=results[+i],f=t.dataset.f,x=t.textContent.trim();if(f==="nm"?x===nm(r):x===r[f])return;r[f]=x;draw()});
-$("#tb").onclick=e=>{const t=e.target;if(t.dataset.v!=null)show(+t.dataset.v);if(t.dataset.s!=null)sheet(+t.dataset.s)};
-function sheetHTML(r){const s=stu(r),pass=r.pct>=30,N=results.filter(o=>!o.err).length;
- const grid=r.ans.map((a,q)=>{const k=r.key[q];if(!k)return"";const ok=a===k;return `<span class="${ok?"g":a===""?"n":"x"}">${q+1}:${a||"\u2013"}${ok||a==="*"||a===""?"":"\u2192"+k}</span>`}).join("");
- return `<div class="rs"><div class="rh"><h1>GOLDEN VALLEY INSTITUTE</h1><div>RESULT SHEET \u00b7 ${esc(cfg.exam)}</div></div>
-<table class="it"><tr><td>Student Name</td><td><b>${esc(nm(r)||"\u2014")}</b></td><td>Roll Code</td><td><b>${r.rcode}</b></td></tr>
-<tr><td>Father\u2019s Name</td><td>${esc(s.f||"\u2014")}</td><td>Roll No.</td><td><b>${r.roll}</b></td></tr>
-<tr><td>Class / Subject</td><td>${esc(cfg.cls)} ${esc(cfg.subj)}</td><td>Set / Date</td><td>${r.set} \u00b7 ${esc(cfg.date)}</td></tr></table>
-<table class="sm"><tr><th>Questions</th><th>Correct</th><th>Wrong</th><th>Not attempted</th><th>Marks</th><th>Percentage</th><th>Rank</th></tr>
-<tr><td>${r.c+r.w+r.b+r.m}</td><td>${r.c}</td><td>${r.w}</td><td>${r.b+r.m}</td><td>${r.score} / ${r.mx}</td><td><b>${r.pct.toFixed(2)}%</b></td><td><b>${r.rank} / ${N}</b></td></tr></table>
-<div class="res ${pass?"p":"f"}">RESULT: ${pass?"PASS":"FAIL"} \u00b7 ${divs(r)}</div>
-<div style="font-size:11px;color:#444">Answer review (marked \u2192 correct): green = correct, red = wrong, grey = not attempted</div><div class="qg">${grid}</div>
-<div class="sg"><span>Class Teacher</span><span>Examiner</span><span>Principal</span></div></div>`}
-function meritHTML(){const v=results.filter(r=>!r.err).sort((a,b)=>a.rank-b.rank);
- return `<div class="rs"><div class="rh"><h1>GOLDEN VALLEY INSTITUTE</h1><div>MERIT LIST \u00b7 ${esc(cfg.exam)} \u00b7 ${esc(cfg.cls)} ${esc(cfg.subj)} \u00b7 ${esc(cfg.date)}</div></div>
-<table class="sm"><tr><th>Rank</th><th>Name</th><th>Roll Code</th><th>Roll No.</th><th>Marks</th><th>%</th><th>Division</th></tr>${v.map(r=>`<tr><td>${r.rank}</td><td class="l">${esc(nm(r))}</td><td>${r.rcode}</td><td>${r.roll}</td><td>${r.score}/${r.mx}</td><td>${r.pct.toFixed(2)}</td><td>${divs(r)}</td></tr>`).join("")}</table></div>`}
-function pr(html){$("#pa").innerHTML=html;document.body.classList.add("printing");setTimeout(()=>{try{window.print()}catch(e){alert("Printing is blocked here \u2013 open this page in a normal browser tab.")}document.body.classList.remove("printing")},150)}
-function sheet(i){const sp=$("#sp");sp.hidden=false;sp.innerHTML=`<div class="row"><button onclick="pr(sheetHTML(results[${i}]))">Print / Save as PDF</button><button class="sec" onclick="this.closest('section').hidden=true">Close</button></div>`+sheetHTML(results[i]);sp.scrollIntoView({behavior:"smooth"})}
-$("#pml").onclick=()=>pr(meritHTML());
-$("#pall").onclick=()=>pr(results.filter(r=>!r.err).sort((a,b)=>a.rank-b.rank).map(sheetHTML).join(""));
-fr();
-function show(i){sel=i;const r=results[i],c=$("#cv"),x=c.getContext("2d");c.width=r.cv.width;c.height=r.cv.height;x.drawImage(r.cv,0,0);
- const key=keys[r.set]||[];x.lineWidth=Math.max(2,r.s*1.6);
- r.ans.forEach((a,q)=>{const k=key[q];if(!k)return;
-  const ring=(j,col)=>{const[px,py]=r.mp(...ansPos(q,j));x.strokeStyle=col;x.beginPath();x.arc(px,py,r.s*7.2,0,7);x.stroke()};
-  if(a==="*"){r.af[q].forEach((v,j)=>{if(v>0.35)ring(j,"#ff9800")})}
-  else if(a===k)ring(OPT.indexOf(a),"#1b9a3a");
-  else{if(a)ring(OPT.indexOf(a),"#d32f2f");ring(OPT.indexOf(k),"#2f7bff")}});
- $("#vt").textContent=`${r.name} — Roll ${r.roll} · Set ${r.set} · Score ${r.score}`;$("#view").hidden=false;$("#view").scrollIntoView({behavior:"smooth"})}
-
-/* ---------- Upload ---------- */
-async function handle(files){
- const hasKey=Object.values(keys).some(k=>k.some(Boolean));
- if(!hasKey&&!confirm("No answer key set yet. Continue anyway? (Scores will be 0)"))return;
- for(const f of files){$("#stat").textContent="Scanning "+f.name+"…";
-  try{const r=await scan(f);evaluate(r);results.push(r)}catch(e){results.push({name:f.name,err:e.message})}
-  draw()}
- $("#stat").textContent="Done – "+results.length+" sheet(s)."}
-$("#fi").onchange=e=>{handle([...e.target.files]);e.target.value=""};
-const dz=$("#dz");dz.ondragover=e=>e.preventDefault();dz.ondrop=e=>{e.preventDefault();handle([...e.dataTransfer.files].filter(f=>f.type.startsWith("image/")))};
-$("#srt").onclick=()=>{sortRank=!sortRank;draw()};
-$("#dl").onclick=()=>$("#cv").toBlob(b=>{const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="checked_"+(results[sel]?.roll||"sheet")+".jpg";a.click()},"image/jpeg",.9);
-$("#rst").onclick=()=>{results=[];sel=null;$("#view").hidden=true;draw()};
-$("#csv").onclick=()=>{const v=results.filter(r=>!r.err).sort((a,b)=>a.rank-b.rank);
- const t="\ufeffRank,Name,Father,RollCode,RollNo,SubjectCode,BookletNo,Set,Correct,Wrong,Blank,Multiple,Marks,MaxMarks,Percentage,Division\n"+v.map(r=>[r.rank,'"'+nm(r)+'"','"'+stu(r).f+'"',r.rcode,r.roll,r.sub,r.bk,r.set,r.c,r.w,r.b,r.m,r.score,r.mx,r.pct.toFixed(2),divs(r)].join(",")).join("\n");
- const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([t],{type:"text/csv"}));a.download="GVI_result_"+cfg.date+".csv";a.click()};
-/* ---------- Live camera ---------- */
-let stream=null,tim=null,prev=null,stable=0,armed=true,busy=false;
-const vid=$("#vid"),ov=$("#ov"),cs=$("#cstat"),tmp=document.createElement("canvas");
-function beep(){try{const a=new(window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator();o.frequency.value=880;o.connect(a.destination);o.start();setTimeout(()=>{o.stop();a.close()},150)}catch(e){}try{navigator.vibrate&&navigator.vibrate(80)}catch(e){}}
-function detect(cv){const w=cv.width,h=cv.height,px=cv.getContext("2d",{willReadFrequently:true}).getImageData(0,0,w,h).data,g=new Uint8Array(w*h),rg=new Uint8Array(w*h*4);
- for(let i=0,j=0;i<px.length;i+=4,j++){g[j]=(px[i]*.3+px[i+1]*.59+px[i+2]*.11)|0;rg[j*4]=g[j]}
- const thr=Math.min(otsu(rg)*.85,120),rw=Math.round(w*.3),rh=Math.round(h*.22);
- const a=findCorner(g,w,h,thr,0,0,rw,rh,0,0),b=findCorner(g,w,h,thr,w-rw,0,rw,rh,w,0),c=findCorner(g,w,h,thr,0,h-rh,rw,rh,0,h),e=findCorner(g,w,h,thr,w-rw,h-rh,rw,rh,w,h);
- return a&&b&&c&&e?[a,b,c,e]:null}
-async function startCam(){
- try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1920},height:{ideal:1080}},audio:false});
-  vid.srcObject=stream;await vid.play();$("#camwrap").hidden=false;$("#cam").textContent="Stop camera";armed=true;stable=0;prev=null;tim=setInterval(tick,300)}
- catch(e){cs.textContent="Camera is blocked or unavailable ("+(e.name||"error")+"). Open this page in your phone browser and allow camera, or use “Take photo”."}}
-function stopCam(){clearInterval(tim);tim=null;stream&&stream.getTracks().forEach(t=>t.stop());stream=null;vid.srcObject=null;$("#camwrap").hidden=true;$("#cam").textContent="Start live camera"}
-$("#cam").onclick=()=>stream?stopCam():startCam();
-$("#cp").onchange=e=>{handle([...e.target.files]);e.target.value=""};
-async function tick(){
- if(busy||!vid.videoWidth)return;
- const vw=vid.videoWidth,vh=vid.videoHeight,k=Math.min(1,800/Math.max(vw,vh));
- tmp.width=Math.round(vw*k);tmp.height=Math.round(vh*k);tmp.getContext("2d",{willReadFrequently:true}).drawImage(vid,0,0,tmp.width,tmp.height);
- let c=null;try{c=detect(tmp)}catch(e){}
- ov.width=tmp.width;ov.height=tmp.height;const x=ov.getContext("2d");x.clearRect(0,0,ov.width,ov.height);
- if(!c){stable=0;prev=null;armed=true;cs.textContent="Show the full sheet – all 4 black corner squares must be visible";return}
- const mv=prev?Math.max(...c.map((p,i)=>Math.hypot(p[0]-prev[i][0],p[1]-prev[i][1])))/tmp.width:1;prev=c;
- const span=(c[1][0]-c[0][0])/tmp.width;
- x.lineWidth=4;x.strokeStyle=span<.4?"#ff9800":"#1db954";x.beginPath();[0,1,3,2,0].forEach((i,n)=>n?x.lineTo(...c[i]):x.moveTo(...c[i]));x.stroke();
- if(!armed){if(mv>.08){armed=true;stable=0}else{cs.textContent="Scanned ✔ – remove this sheet and show the next one";return}}
- if(span<.4){stable=0;cs.textContent="Move closer – sheet should fill the frame";return}
- stable=mv<.012?stable+1:0;cs.textContent="Hold steady… "+Math.min(stable,3)+"/3";
- if(stable<3)return;
- busy=true;
- const k2=Math.min(1,1600/Math.max(vw,vh)),cv=document.createElement("canvas");cv.width=Math.round(vw*k2);cv.height=Math.round(vh*k2);cv.getContext("2d",{willReadFrequently:true}).drawImage(vid,0,0,cv.width,cv.height);
- try{const r=scanCv(cv,"Camera "+(results.length+1));evaluate(r);
-  const dup=!r.roll.includes("?")&&results.some(o=>!o.err&&o.roll===r.roll&&o.rcode===r.rcode);
-  if(dup)cs.textContent="Roll "+r.roll+" already scanned – ignored";
-  else{results.push(r);draw();beep();cs.textContent="✔ Roll "+r.rcode+"-"+r.roll+" · Set "+r.set+" · Score "+r.score+"  (total scanned: "+results.length+")"}}
- catch(e){cs.textContent="Scan failed: "+e.message}
- armed=false;stable=0;busy=false}
-renderKey();
-</script>
-</body>
-</html>
-</template>
 
 <script>
 (function(){
@@ -708,16 +437,285 @@ function render(){
   updateBadges();
 }
 
-// ===================== OMR IFRAME =====================
+// ===================== OMR APP (Injected directly) =====================
 function renderOMR(){
   return `
-    <iframe id="omrIframe" allow="camera; microphone"></iframe>
+  <div id="omr-view">
+    <header>
+    <h1>GOLDEN VALLEY INSTITUTE</h1>
+    <p>Smart OMR Checker · Rank · Percentage · Result Sheets · BSEB Pattern</p>
+    </header>
+    <main>
+
+    <section class="card">
+    <h2>Step 1 – Set the answer key</h2>
+    <div class="row sets"><label>Paper set:</label>
+    <button data-set="A" class="on">A</button><button data-set="B" class="sec">B</button><button data-set="C" class="sec">C</button><button data-set="D" class="sec">D</button>
+    <label style="margin-left:auto">Marks / correct</label><input type="number" id="mk" value="1" step="0.25">
+    <label>Negative / wrong</label><input type="number" id="ng" value="0" step="0.25" min="0">
+    </div>
+    <label>Quick paste (e.g. ABCDDACB… in order of questions 1–100; use - to skip a question)</label>
+    <textarea id="paste" placeholder="ABCDABCD…"></textarea>
+    <div class="row" style="margin-top:8px"><button id="apply">Apply pasted key</button><button class="sec" id="clr">Clear this set</button><span id="kc" style="font-size:13px;color:var(--mut)"></span></div>
+    <div class="keygrid" id="kg"></div>
+    </section>
+
+    <section class="card">
+    <h2>Step 2 – Students &amp; exam details</h2>
+    <div class="row"><input id="ex" placeholder="Exam name" style="flex:2"><input id="cl" placeholder="Class"><input id="sj" placeholder="Subject"><input type="date" id="dt"></div>
+    <label>Student list – one per line: Roll Code, Roll No., Name, Father’s name (or just: Roll No., Name)</label>
+    <textarea id="ro" placeholder="10101,2605010123,Rahul Kumar,Suresh Kumar"></textarea>
+    <div class="row" style="margin-top:8px"><button id="rsv">Save student list</button><label class="btn" style="background:transparent;color:var(--ac);border:1px solid var(--ac)">Import CSV<input type="file" id="rf" accept=".csv,.txt" hidden></label><span id="rc" style="font-size:13px;color:var(--mut)"></span></div>
+    </section>
+
+    <section class="card">
+    <h2>Step 3 – Scan directly with camera</h2>
+    <div class="row"><button id="cam">Start live camera</button>
+    <label class="btn" style="background:transparent;color:var(--ac);border:1px solid var(--ac)">Take photo<input type="file" id="cp" accept="image/*" capture="environment" hidden></label></div>
+    <div id="cstat">Live camera auto-detects the sheet, scans it when steady and beeps. Keep all 4 black corner squares inside the frame.</div>
+    <div id="camwrap" hidden><video id="vid" playsinline muted></video><canvas id="ov"></canvas></div>
+    </section>
+
+    <section class="card">
+    <h2>Or upload scanned / photographed sheets</h2>
+    <label class="drop" id="dz"><input type="file" id="fi" accept="image/*" multiple>
+    <div style="font-size:30px">📄</div><div><b>Tap to choose images</b> (or drag and drop)</div>
+    <div style="font-size:12px;color:var(--mut)">Use the new BSEB-style Golden Valley OMR sheet (5 columns × 20 questions). Sheet must be upright, all 4 black corner squares visible, good light, no shadow.</div></label>
+    <div class="row" style="margin-top:10px"><label>Mark sensitivity</label><input type="range" id="sens" min="0.1" max="0.5" step="0.01" value="0.25"><span id="stat"></span></div>
+    </section>
+
+    <section class="card" id="res" hidden>
+    <h2>Step 4 – Result, rank &amp; result sheets</h2>
+    <div id="st" class="chips"></div>
+    <div class="row"><button id="pml">Merit list (print)</button><button id="pall">All result sheets (print)</button><button class="sec" id="csv">Download CSV</button><button class="sec" id="srt">Sort by rank</button><button class="sec" id="rst">Clear all</button></div>
+    <div style="font-size:12px;color:var(--mut);margin-bottom:6px">Tip: tap a name, roll code or roll no. in the table to correct it. “Result” opens the printable result sheet.</div>
+    <div class="tw"><table><thead><tr><th>Rank</th><th>Name</th><th>Roll Code</th><th>Roll No.</th><th>Set</th><th>Correct</th><th>Wrong</th><th>Blank/Multi</th><th>Marks</th><th>%</th><th>Division</th><th></th></tr></thead><tbody id="tb"></tbody></table></div>
+    </section>
+    <section class="card" id="sp" hidden></section>
+    <div id="pa"></div>
+
+    <section class="card" id="view" hidden>
+    <h2 id="vt">Sheet view</h2>
+    <div class="leg"><span><u style="color:var(--ok)"></u>Correct</span><span><u style="color:var(--bad)"></u>Wrong</span><span><u style="color:#2f7bff"></u>Right answer</span><span><u style="color:#ff9800"></u>Multiple marks</span></div>
+    <canvas id="cv"></canvas>
+    <div class="row" style="margin-top:10px"><button id="dl">Download marked sheet</button></div>
+    </section>
+    </main>
+    <footer>Golden Valley Institute · Processing happens on your device – images are not uploaded anywhere.</footer>
+  </div>
   `;
 }
+
 function attachOMR(){
-  const iframe = document.getElementById('omrIframe');
-  const template = document.getElementById('omr-template');
-  iframe.srcdoc = template.innerHTML;
+  const root = document.getElementById('omr-view');
+  const $ = s => root.querySelector(s);
+  const $$ = s => root.querySelectorAll(s);
+
+  const OPT="ABCD",N=100,PW=595,PH=842;
+  let keys={A:[],B:[],C:[],D:[]},cur="A",results=[];
+  try{const k=JSON.parse(localStorage.getItem("gvi_keys")||"null");if(k)keys=k}catch(e){}
+  const save=()=>{try{localStorage.setItem("gvi_keys",JSON.stringify(keys))}catch(e){}};
+
+  /* ---------- Answer key UI ---------- */
+  function renderKey(){
+   const k=keys[cur];let h="";
+   for(let q=0;q<N;q++){h+=`<div class="kq"><b>${q+1}</b>`+[...OPT].map(o=>`<i data-q="${q}" data-o="${o}" class="${k[q]===o?"s":""}">${o}</i>`).join("")+`</div>`}
+   $("#kg").innerHTML=h;
+   $("#kc").textContent=k.filter(Boolean).length+" / 100 answers set for Set "+cur;
+  }
+  $("#kg").onclick=e=>{const t=e.target;if(t.tagName!=="I")return;const q=+t.dataset.q,o=t.dataset.o;
+   keys[cur][q]=keys[cur][q]===o?"":o;save();renderKey();rescore()};
+  $$("[data-set]").forEach(b=>b.onclick=()=>{cur=b.dataset.set;
+   $$("[data-set]").forEach(x=>x.className=x===b?"on":"sec");renderKey()});
+  $("#apply").onclick=()=>{const s=($("#paste").value||"").toUpperCase().replace(/[^ABCD\-]/g,"");
+   keys[cur]=Array.from({length:N},(_,i)=>OPT.includes(s[i])?s[i]:"");save();renderKey();rescore()};
+  $("#clr").onclick=()=>{keys[cur]=[];save();renderKey();rescore()};
+  ["mk","ng"].forEach(i=>$("#"+i).oninput=rescore);
+  $("#sens").oninput=rescore;
+
+  /* ---------- Image helpers ---------- */
+  function loadImg(f){return new Promise((ok,no)=>{const u=URL.createObjectURL(f),im=new Image();im.onload=()=>{URL.revokeObjectURL(u);ok(im)};im.onerror=()=>no(new Error("Cannot read image"));im.src=u})}
+  function otsu(g){const h=new Array(256).fill(0);for(let i=0;i<g.length;i+=4)h[g[i]]++;const T=g.length/4;let s=0;for(let i=0;i<256;i++)s+=i*h[i];
+   let sb=0,wb=0,m=0,best=0;for(let t=0;t<256;t++){wb+=h[t];if(!wb)continue;const wf=T-wb;if(!wf)break;sb+=t*h[t];const d=(sb/wb-(s-sb)/wf);const v=wb*wf*d*d;if(v>m){m=v;best=t}}return best}
+  function findCorner(gray,w,h,thr,x0,y0,rw,rh,cx,cy){
+   const seen=new Uint8Array(rw*rh);let best=null,bd=1e9;
+   for(let y=0;y<rh;y++)for(let x=0;x<rw;x++){const id=y*rw+x;if(seen[id]||gray[(y0+y)*w+x0+x]>=thr)continue;
+    let st=[id],n=0,mnx=x,mxx=x,mny=y,mxy=y,sx=0,sy=0;seen[id]=1;
+    while(st.length){const p=st.pop(),px=p%rw,py=(p/rw)|0;n++;sx+=px;sy+=py;
+     if(px<mnx)mnx=px;if(px>mxx)mxx=px;if(py<mny)mny=py;if(py>mxy)mxy=py;
+     for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=px+dx,ny=py+dy;if(nx<0||ny<0||nx>=rw||ny>=rh)continue;const q=ny*rw+nx;if(!seen[q]&&gray[(y0+ny)*w+x0+nx]<thr){seen[q]=1;st.push(q)}}}
+    const bw=mxx-mnx+1,bh=mxy-mny+1,fr=n/(bw*bh),ar=bw/bh;
+    if(bw>w*.012&&bw<w*.08&&fr>.72&&ar>.65&&ar<1.5){const px=x0+sx/n,py=y0+sy/n,d=Math.hypot(px-cx,py-cy);if(d<bd){bd=d;best=[px,py]}}}
+   return best}
+  function homog(S,D){const A=[],b=[];for(let i=0;i<4;i++){const[x,y]=S[i],[u,v]=D[i];
+   A.push([x,y,1,0,0,0,-u*x,-u*y]);b.push(u);A.push([0,0,0,x,y,1,-v*x,-v*y]);b.push(v)}
+   for(let i=0;i<8;i++){let p=i;for(let r=i+1;r<8;r++)if(Math.abs(A[r][i])>Math.abs(A[p][i]))p=r;[A[i],A[p]]=[A[p],A[i]];[b[i],b[p]]=[b[p],b[i]];
+    for(let r=0;r<8;r++){if(r===i)continue;const f=A[r][i]/A[i][i];for(let c=i;c<8;c++)A[r][c]-=f*A[i][c];b[r]-=f*b[i]}}
+   return b.map((v,i)=>v/A[i][i])}
+
+  /* ---------- Sheet geometry ---------- */
+  const ansPos=(q,j)=>[45+((q/20)|0)*101+38+j*18,418+(q%20)*18.6];
+  const GRIDS=[[45,5],[136,10],[312,3],[369,6]];
+  const setPos=i=>[513.5,205+i*20];
+
+  async function scan(file){
+   const im=await loadImg(file),sc=Math.min(1,1600/Math.max(im.width,im.height));
+   const cv=document.createElement("canvas");cv.width=Math.round(im.width*sc);cv.height=Math.round(im.height*sc);
+   const ctx=cv.getContext("2d",{willReadFrequently:true});ctx.drawImage(im,0,0,cv.width,cv.height);
+   return scanCv(cv,file.name)}
+  function scanCv(cv,name){
+   const ctx=cv.getContext("2d",{willReadFrequently:true});
+   const w=cv.width,h=cv.height,d=ctx.getImageData(0,0,w,h).data,gray=new Uint8Array(w*h);
+   for(let i=0,j=0;i<d.length;i+=4,j++)gray[j]=(d[i]*.3+d[i+1]*.59+d[i+2]*.11)|0;
+   const rgba=new Uint8Array(w*h*4);for(let j=0;j<gray.length;j++)rgba[j*4]=gray[j];
+   const thr=Math.min(otsu(rgba)*.85,120),rw=Math.round(w*.3),rh=Math.round(h*.22);
+   const tl=findCorner(gray,w,h,thr,0,0,rw,rh,0,0),tr=findCorner(gray,w,h,thr,w-rw,0,rw,rh,w,0),
+    bl=findCorner(gray,w,h,thr,0,h-rh,rw,rh,0,h),br=findCorner(gray,w,h,thr,w-rw,h-rh,rw,rh,w,h);
+   if(!(tl&&tr&&bl&&br))throw new Error("4 corner squares not found – retake photo");
+   const Hm=homog([[26,26],[569,26],[26,816],[569,816]],[tl,tr,bl,br]);
+   const mp=(u,v)=>{const z=Hm[6]*u+Hm[7]*v+1;return[(Hm[0]*u+Hm[1]*v+Hm[2])/z,(Hm[3]*u+Hm[4]*v+Hm[5])/z]};
+   const s=Math.hypot(tr[0]-tl[0],tr[1]-tl[1])/543;
+   const sorted=Uint8Array.from(gray).sort(),paper=Math.max(sorted[(sorted.length*.9)|0],60);
+   const fill=(u,v,r)=>{const[cx,cy]=mp(u,v),R=r*s;let t=0,n=0;
+    for(let y=Math.floor(cy-R);y<=cy+R;y++)for(let x=Math.floor(cx-R);x<=cx+R;x++){if(x<0||y<0||x>=w||y>=h)continue;if((x-cx)**2+(y-cy)**2<=R*R){t+=gray[y*w+x];n++}}
+    return n?Math.max(0,1-(t/n)/paper):0};
+   const af=[];for(let q=0;q<N;q++)af.push([0,1,2,3].map(j=>fill(...ansPos(q,j),3.3)));
+   const gf=GRIDS.map(g=>Array.from({length:g[1]},(_,i)=>[...Array(10).keys()].map(d=>fill(g[0]+8.5+i*17,198+d*11.6,2.7))));
+   const sf=[0,1,2,3].map(i=>fill(...setPos(i),3.8));
+   return{name,cv,mp,s,af,gf,sf}}
+
+  /* ---------- Evaluate ---------- */
+  function evaluate(r){
+   const all=r.af.flat().slice().sort((a,b)=>a-b),med=all[all.length>>1],thr=med+ +$("#sens").value;
+   r.ans=r.af.map(f=>{const m=f.map((v,i)=>v>thr?i:-1).filter(i=>i>=0);return m.length===0?"":m.length>1?"*":OPT[m[0]]});
+   const ga=r.gf.flat(2).sort((a,b)=>a-b),tg=ga[ga.length>>1]+ +$("#sens").value;
+   const rd=g=>g.map(col=>{const mx=Math.max(...col);return mx>tg?col.indexOf(mx):"?"}).join("");
+   [r.rcode,r.roll,r.sub,r.bk]=r.gf.map(rd);
+   const sm=Math.max(...r.sf);r.set=sm>thr?OPT[r.sf.indexOf(sm)]:"A";
+   const key=keys[r.set]||[];let c=0,w=0,b=0,m=0;
+   r.ans.forEach((a,q)=>{if(!key[q])return;if(a==="*")m++;else if(a==="")b++;else if(a===key[q])c++;else w++});
+   const mx=(c+w+b+m)*(+$("#mk").value),sc=c*(+$("#mk").value)-w*(+$("#ng").value);Object.assign(r,{c,w,b,m,score:sc,mx,pct:mx?Math.max(0,sc)/mx*100:0})}
+  function rescore(){results.forEach(evaluate);draw();if(sel!=null)show(sel)}
+  let sel=null,sortRank=true;
+  
+  /* ---------- Students, exam details ---------- */
+  let roster={},cfg={exam:"Mock Test \u2013 BSEB Pattern",cls:"",subj:"",date:new Date().toISOString().slice(0,10)};
+  try{roster=JSON.parse(localStorage.getItem("gvi_roster")||"{}");Object.assign(cfg,JSON.parse(localStorage.getItem("gvi_cfg")||"{}"))}catch(e){}
+  const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const rk=(c,r)=>(c||"")+"-"+r;
+  function parseRoster(t){const o={};t.split(/\r?\n/).forEach(l=>{const p=l.split(/[,\t]/).map(x=>x.trim().replace(/^"|"$/g,""));if(p.length<2||/roll/i.test(p[0]))return;
+   if(p.length>=3&&/^\d+$/.test(p[0])&&/^\d+$/.test(p[1]))o[rk(p[0],p[1])]={n:p[2],f:p[3]||""};else if(/^\d+$/.test(p[0]))o[rk("",p[0])]={n:p[1],f:p[2]||""}});return o}
+  const stu=r=>roster[rk(r.rcode,r.roll)]||roster[rk("",r.roll)]||{n:"",f:""};
+  const nm=r=>r.nm!=null?r.nm:stu(r).n;
+  const divs=r=>r.pct>=60?"1st Division":r.pct>=45?"2nd Division":r.pct>=30?"3rd Division":"Fail";
+  function fr(){$("#ex").value=cfg.exam;$("#cl").value=cfg.cls;$("#sj").value=cfg.subj;$("#dt").value=cfg.date;
+   $("#rc").textContent=Object.keys(roster).length+" students saved";
+   $("#ro").value=Object.entries(roster).map(([k,v])=>{const[a,b]=k.split("-");return(a?[a,b,v.n,v.f]:[b,v.n,v.f]).join(",")}).join("\n")}
+  [["ex","exam"],["cl","cls"],["sj","subj"],["dt","date"]].forEach(([i,k])=>$("#"+i).oninput=e=>{cfg[k]=e.target.value;try{localStorage.setItem("gvi_cfg",JSON.stringify(cfg))}catch(x){}});
+  $("#rsv").onclick=()=>{roster=parseRoster($("#ro").value);try{localStorage.setItem("gvi_roster",JSON.stringify(roster))}catch(x){}fr();draw()};
+  $("#rf").onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{$("#ro").value=t;$("#rsv").click()});e.target.value=""};
+
+  /* ---------- Results table, rank, result sheets ---------- */
+  function ranks(){const v=results.filter(r=>!r.err);v.forEach(r=>r.rank=1+v.filter(o=>o.score>r.score).length);return v}
+  function draw(){
+   const v=ranks();$("#res").hidden=!results.length;
+   const ord=results.map((_,i)=>i);if(sortRank)ord.sort((a,b)=>(results[a].err?1e9:results[a].rank)-(results[b].err?1e9:results[b].rank));
+   $("#tb").innerHTML=ord.map(i=>{const r=results[i];if(r.err)return `<tr><td></td><td class="l err" colspan="11">${esc(r.name)}: ${esc(r.err)}</td></tr>`;
+    return `<tr><td><b>${r.rank}</b></td><td class="l" contenteditable data-i="${i}" data-f="nm">${esc(nm(r))}</td><td contenteditable data-i="${i}" data-f="rcode">${r.rcode}</td><td contenteditable data-i="${i}" data-f="roll">${r.roll}</td><td>${r.set}</td><td>${r.c}</td><td>${r.w}</td><td>${r.b}/${r.m}</td><td class="sc">${r.score}/${r.mx}</td><td class="sc">${r.pct.toFixed(1)}%</td><td>${divs(r)}</td><td><button class="sec" data-v="${i}">Marks</button> <button data-s="${i}">Result</button></td></tr>`}).join("");
+   if(v.length){const top=v.reduce((a,b)=>b.score>a.score?b:a),avg=v.reduce((t,r)=>t+r.pct,0)/v.length,ps=v.filter(r=>r.pct>=30).length;
+    $("#st").innerHTML=`<div><b>${v.length}</b>Students</div><div><b>${top.pct.toFixed(1)}%</b>Topper ${esc(nm(top)||top.roll)}</div><div><b>${avg.toFixed(1)}%</b>Class average</div><div><b>${ps}/${v.length}</b>Passed (30%+)</div>`}}
+  $("#tb").addEventListener("focusout",e=>{const t=e.target,i=t.dataset.i;if(i==null)return;const r=results[+i],f=t.dataset.f,x=t.textContent.trim();if(f==="nm"?x===nm(r):x===r[f])return;r[f]=x;draw()});
+  $("#tb").onclick=e=>{const t=e.target;if(t.dataset.v!=null)show(+t.dataset.v);if(t.dataset.s!=null)sheet(+t.dataset.s)};
+  
+  function sheetHTML(r){const s=stu(r),pass=r.pct>=30,N=results.filter(o=>!o.err).length;
+   const grid=r.ans.map((a,q)=>{const k=r.key[q];if(!k)return"";const ok=a===k;return `<span class="${ok?"g":a===""?"n":"x"}">${q+1}:${a||"\u2013"}${ok||a==="*"||a===""?"":"\u2192"+k}</span>`}).join("");
+   return `<div class="rs"><div class="rh"><h1>GOLDEN VALLEY INSTITUTE</h1><div>RESULT SHEET \u00b7 ${esc(cfg.exam)}</div></div>
+  <table class="it"><tr><td>Student Name</td><td><b>${esc(nm(r)||"\u2014")}</b></td><td>Roll Code</td><td><b>${r.rcode}</b></td></tr>
+  <tr><td>Father\u2019s Name</td><td>${esc(s.f||"\u2014")}</td><td>Roll No.</td><td><b>${r.roll}</b></td></tr>
+  <tr><td>Class / Subject</td><td>${esc(cfg.cls)} ${esc(cfg.subj)}</td><td>Set / Date</td><td>${r.set} \u00b7 ${esc(cfg.date)}</td></tr></table>
+  <table class="sm"><tr><th>Questions</th><th>Correct</th><th>Wrong</th><th>Not attempted</th><th>Marks</th><th>Percentage</th><th>Rank</th></tr>
+  <tr><td>${r.c+r.w+r.b+r.m}</td><td>${r.c}</td><td>${r.w}</td><td>${r.b+r.m}</td><td>${r.score} / ${r.mx}</td><td><b>${r.pct.toFixed(2)}%</b></td><td><b>${r.rank} / ${N}</b></td></tr></table>
+  <div class="res ${pass?"p":"f"}">RESULT: ${pass?"PASS":"FAIL"} \u00b7 ${divs(r)}</div>
+  <div style="font-size:11px;color:#444">Answer review (marked \u2192 correct): green = correct, red = wrong, grey = not attempted</div><div class="qg">${grid}</div>
+  <div class="sg"><span>Class Teacher</span><span>Examiner</span><span>Principal</span></div></div>`}
+  
+  function meritHTML(){const v=results.filter(r=>!r.err).sort((a,b)=>a.rank-b.rank);
+   return `<div class="rs"><div class="rh"><h1>GOLDEN VALLEY INSTITUTE</h1><div>MERIT LIST \u00b7 ${esc(cfg.exam)} \u00b7 ${esc(cfg.cls)} ${esc(cfg.subj)} \u00b7 ${esc(cfg.date)}</div></div>
+  <table class="sm"><tr><th>Rank</th><th>Name</th><th>Roll Code</th><th>Roll No.</th><th>Marks</th><th>%</th><th>Division</th></tr>${v.map(r=>`<tr><td>${r.rank}</td><td class="l">${esc(nm(r))}</td><td>${r.rcode}</td><td>${r.roll}</td><td>${r.score}/${r.mx}</td><td>${r.pct.toFixed(2)}</td><td>${divs(r)}</td></tr>`).join("")}</table></div>`}
+  
+  function pr(html){$("#pa").innerHTML=html;document.body.classList.add("printing");setTimeout(()=>{try{window.print()}catch(e){alert("Printing is blocked here \u2013 open this page in a normal browser tab.")}document.body.classList.remove("printing")},150)}
+  function sheet(i){const sp=$("#sp");sp.hidden=false;sp.innerHTML=`<div class="row"><button onclick="pr(sheetHTML(results[${i}]))">Print / Save as PDF</button><button class="sec" onclick="this.closest('section').hidden=true">Close</button></div>`+sheetHTML(results[i]);sp.scrollIntoView({behavior:"smooth"})}
+  
+  $("#pml").onclick=()=>pr(meritHTML());
+  $("#pall").onclick=()=>pr(results.filter(r=>!r.err).sort((a,b)=>a.rank-b.rank).map(sheetHTML).join(""));
+  fr();
+  
+  function show(i){sel=i;const r=results[i],c=$("#cv"),x=c.getContext("2d");c.width=r.cv.width;c.height=r.cv.height;x.drawImage(r.cv,0,0);
+   const key=keys[r.set]||[];x.lineWidth=Math.max(2,r.s*1.6);
+   r.ans.forEach((a,q)=>{const k=key[q];if(!k)return;
+    const ring=(j,col)=>{const[px,py]=r.mp(...ansPos(q,j));x.strokeStyle=col;x.beginPath();x.arc(px,py,r.s*7.2,0,7);x.stroke()};
+    if(a==="*"){r.af[q].forEach((v,j)=>{if(v>0.35)ring(j,"#ff9800")})}
+    else if(a===k)ring(OPT.indexOf(a),"#1b9a3a");
+    else{if(a)ring(OPT.indexOf(a),"#d32f2f");ring(OPT.indexOf(k),"#2f7bff")}});
+   $("#vt").textContent=`${r.name} — Roll ${r.roll} · Set ${r.set} · Score ${r.score}`;$("#view").hidden=false;$("#view").scrollIntoView({behavior:"smooth"})}
+  
+  /* ---------- Upload ---------- */
+  async function handle(files){
+   const hasKey=Object.values(keys).some(k=>k.some(Boolean));
+   if(!hasKey&&!confirm("No answer key set yet. Continue anyway? (Scores will be 0)"))return;
+   for(const f of files){$("#stat").textContent="Scanning "+f.name+"…";
+    try{const r=await scan(f);evaluate(r);results.push(r)}catch(e){results.push({name:f.name,err:e.message})}
+    draw()}
+   $("#stat").textContent="Done – "+results.length+" sheet(s)."}
+  
+  $("#fi").onchange=e=>{handle([...e.target.files]);e.target.value=""};
+  const dz=$("#dz");dz.ondragover=e=>e.preventDefault();dz.ondrop=e=>{e.preventDefault();handle([...e.dataTransfer.files].filter(f=>f.type.startsWith("image/")))};
+  $("#srt").onclick=()=>{sortRank=!sortRank;draw()};
+  $("#dl").onclick=()=>$("#cv").toBlob(b=>{const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="checked_"+(results[sel]?.roll||"sheet")+".jpg";a.click()},"image/jpeg",.9);
+  $("#rst").onclick=()=>{results=[];sel=null;$("#view").hidden=true;draw()};
+  $("#csv").onclick=()=>{const v=results.filter(r=>!r.err).sort((a,b)=>a.rank-b.rank);
+   const t="\ufeffRank,Name,Father,RollCode,RollNo,SubjectCode,BookletNo,Set,Correct,Wrong,Blank,Multiple,Marks,MaxMarks,Percentage,Division\n"+v.map(r=>[r.rank,'"'+nm(r)+'"','"'+stu(r).f+'"',r.rcode,r.roll,r.sub,r.bk,r.set,r.c,r.w,r.b,r.m,r.score,r.mx,r.pct.toFixed(2),divs(r)].join(",")).join("\n");
+   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([t],{type:"text/csv"}));a.download="GVI_result_"+cfg.date+".csv";a.click()};
+  
+  /* ---------- Live camera ---------- */
+  let stream=null,tim=null,prev=null,stable=0,armed=true,busy=false;
+  const vid=$("#vid"),ov=$("#ov"),cs=$("#cstat"),tmp=document.createElement("canvas");
+  function beep(){try{const a=new(window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator();o.frequency.value=880;o.connect(a.destination);o.start();setTimeout(()=>{o.stop();a.close()},150)}catch(e){}try{navigator.vibrate&&navigator.vibrate(80)}catch(e){}}
+  function detect(cv){const w=cv.width,h=cv.height,px=cv.getContext("2d",{willReadFrequently:true}).getImageData(0,0,w,h).data,g=new Uint8Array(w*h),rg=new Uint8Array(w*h*4);
+   for(let i=0,j=0;i<px.length;i+=4,j++){g[j]=(px[i]*.3+px[i+1]*.59+px[i+2]*.11)|0;rg[j*4]=g[j]}
+   const thr=Math.min(otsu(rg)*.85,120),rw=Math.round(w*.3),rh=Math.round(h*.22);
+   const a=findCorner(g,w,h,thr,0,0,rw,rh,0,0),b=findCorner(g,w,h,thr,w-rw,0,rw,rh,w,0),c=findCorner(g,w,h,thr,0,h-rh,rw,rh,0,h),e=findCorner(g,w,h,thr,w-rw,h-rh,rw,rh,w,h);
+   return a&&b&&c&&e?[a,b,c,e]:null}
+  async function startCam(){
+   try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1920},height:{ideal:1080}},audio:false});
+    vid.srcObject=stream;await vid.play();$("#camwrap").hidden=false;$("#cam").textContent="Stop camera";armed=true;stable=0;prev=null;tim=setInterval(tick,300)}
+   catch(e){cs.textContent="Camera is blocked or unavailable ("+(e.name||"error")+"). Open this page in your phone browser and allow camera, or use “Take photo”."}}
+  function stopCam(){clearInterval(tim);tim=null;stream&&stream.getTracks().forEach(t=>t.stop());stream=null;vid.srcObject=null;$("#camwrap").hidden=true;$("#cam").textContent="Start live camera"}
+  $("#cam").onclick=()=>stream?stopCam():startCam();
+  $("#cp").onchange=e=>{handle([...e.target.files]);e.target.value=""};
+  async function tick(){
+   if(busy||!vid.videoWidth)return;
+   const vw=vid.videoWidth,vh=vid.videoHeight,k=Math.min(1,800/Math.max(vw,vh));
+   tmp.width=Math.round(vw*k);tmp.height=Math.round(vh*k);tmp.getContext("2d",{willReadFrequently:true}).drawImage(vid,0,0,tmp.width,tmp.height);
+   let c=null;try{c=detect(tmp)}catch(e){}
+   ov.width=tmp.width;ov.height=tmp.height;const x=ov.getContext("2d");x.clearRect(0,0,ov.width,ov.height);
+   if(!c){stable=0;prev=null;armed=true;cs.textContent="Show the full sheet – all 4 black corner squares must be visible";return}
+   const mv=prev?Math.max(...c.map((p,i)=>Math.hypot(p[0]-prev[i][0],p[1]-prev[i][1])))/tmp.width:1;prev=c;
+   const span=(c[1][0]-c[0][0])/tmp.width;
+   x.lineWidth=4;x.strokeStyle=span<.4?"#ff9800":"#1db954";x.beginPath();[0,1,3,2,0].forEach((i,n)=>n?x.lineTo(...c[i]):x.moveTo(...c[i]));x.stroke();
+   if(!armed){if(mv>.08){armed=true;stable=0}else{cs.textContent="Scanned ✔ – remove this sheet and show the next one";return}}
+   if(span<.4){stable=0;cs.textContent="Move closer – sheet should fill the frame";return}
+   stable=mv<.012?stable+1:0;cs.textContent="Hold steady… "+Math.min(stable,3)+"/3";
+   if(stable<3)return;
+   busy=true;
+   const k2=Math.min(1,1600/Math.max(vw,vh)),cv=document.createElement("canvas");cv.width=Math.round(vw*k2);cv.height=Math.round(vh*k2);cv.getContext("2d",{willReadFrequently:true}).drawImage(vid,0,0,cv.width,cv.height);
+   try{const r=scanCv(cv,"Camera "+(results.length+1));evaluate(r);
+    const dup=!r.roll.includes("?")&&results.some(o=>!o.err&&o.roll===r.roll&&o.rcode===r.rcode);
+    if(dup)cs.textContent="Roll "+r.roll+" already scanned – ignored";
+    else{results.push(r);draw();beep();cs.textContent="✔ Roll "+r.rcode+"-"+r.roll+" · Set "+r.set+" · Score "+r.score+"  (total scanned: "+results.length+")"}}
+   catch(e){cs.textContent="Scan failed: "+e.message}
+   armed=false;stable=0;busy=false}
+  renderKey();
 }
 
 // ===================== DASHBOARD =====================
