@@ -1,4 +1,4 @@
-const CACHE = 'gvi-v45.0.0';
+const CACHE = 'gvi-v50.0.0';
 self.addEventListener('install', (e) => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./', './index.html'])));
