@@ -921,16 +921,20 @@ function processAdvancedOMR(canvas, studentName) {
       let rect = cv.boundingRect(cnt);
       
       // Size filter (Ignore tiny noise and big blocks)
-      if (rect.y > 250 && rect.width > 10 && rect.width < 35 && rect.height > 10 && rect.height < 35) {
+      if (rect.y > 350 && rect.width > 10 && rect.width < 40 && rect.height > 10 && rect.height < 40) {
         let aspect = rect.width / rect.height;
         if (aspect > 0.7 && aspect < 1.3) { 
-          bubbles.push({ x: rect.x + rect.width/2, y: rect.y + rect.height/2 });
+          let mask = cv.Mat.zeros(thresh.rows, thresh.cols, cv.CV_8UC1);
+          cv.drawContours(mask, c2, i, new cv.Scalar(255), -1);
+          let mean = cv.mean(gray, mask)[0]; // Original gray mean
+          mask.delete();
+          bubbles.push({ x: rect.x, y: rect.y, mean: mean });
         }
       }
       cnt.delete();
     }
     
-    // Sort by Y, then X
+    // Sort bubbles strictly Top-to-Bottom, then Left-to-Right
     bubbles.sort((a, b) => Math.abs(a.y - b.y) < 15 ? a.x - b.x : a.y - b.y);
     
     let rows = [], currentRow = [], lastY = -1;
@@ -948,18 +952,20 @@ function processAdvancedOMR(canvas, studentName) {
     
     let studentAnswers = new Array(100).fill('-');
     
-    // Map perfectly to 20 rows
+    // Map to 20 rows
     for (let r = 0; r < Math.min(rows.length, 20); r++) {
         let row = rows[r];
-        if (row.length >= 20) {
+        if (row.length >= 15) { // Ensure enough bubbles in the row
+            // Divide the row into 5 chunks (columns)
+            let chunkSize = Math.floor(row.length / 5);
             for (let col = 0; col < 5; col++) {
-                let qIndex = col * 20 + r; 
-                let startBubble = col * 4;
-                // We already filtered for dark bubbles, so if it exists in this group of 4, mark it
-                for (let b = 0; b < 4; b++) {
-                    if (row[startBubble + b]) {
-                        studentAnswers[qIndex] = String.fromCharCode(65 + b);
-                        break; 
+                let qIndex = col * 20 + r;
+                let chunk = row.slice(col * chunkSize, (col + 1) * chunkSize);
+                
+                if (chunk.length === 4) { // Perfect group of 4 options
+                    let darkest = chunk.reduce((min, b) => b.mean < min.mean ? b : min, chunk[0]);
+                    if (darkest.mean < 150) { // If it's dark enough (filled)
+                        studentAnswers[qIndex] = String.fromCharCode(65 + chunk.indexOf(darkest));
                     }
                 }
             }
