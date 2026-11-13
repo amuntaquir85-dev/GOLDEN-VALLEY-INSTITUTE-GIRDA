@@ -270,30 +270,18 @@ tbody tr:last-child td{border-bottom:none}
 #omrVideo {
   width: 100%; height: 100%; object-fit: cover;
 }
-.cam-overlay {
+#omrOverlay {
   position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  z-index: 5;
   pointer-events: none;
-  background: rgba(0,0,0,0.5);
-  clip-path: polygon(
-    0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%,
-    10% 15%, 90% 15%, 90% 85%, 10% 85%, 10% 15%
-  );
 }
-.cam-corner {
-  position: absolute;
-  width: 70px; height: 70px;
-  border: 4px solid #fff;
+.cam-dark-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.3);
   pointer-events: none;
-  transition: border-color 0.3s;
+  z-index: 2;
 }
-.cam-corner.tl { top: 15%; left: 10%; border-right: none; border-bottom: none; }
-.cam-corner.tr { top: 15%; right: 10%; border-left: none; border-bottom: none; }
-.cam-corner.bl { bottom: 15%; left: 10%; border-right: none; border-top: none; }
-.cam-corner.br { bottom: 15%; right: 10%; border-left: none; border-top: none; }
-
-/* Green state when detected */
-.cam-detected .cam-corner { border-color: #10b981; }
-.cam-detected .cam-guide-text { color: #10b981; }
 
 .cam-header {
   position: absolute; top: 0; left: 0; right: 0;
@@ -313,30 +301,15 @@ tbody tr:last-child td{border-bottom:none}
   z-index: 10;
 }
 .cam-guide-text {
-  color: #fff; font-size: 16px; font-weight: 600; margin-top: 10px;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
-}
-
-/* Scanning Line Animation */
-.scan-line {
-  position: absolute; top: 15%; left: 10%; right: 10%; height: 2px;
-  background: #10b981; box-shadow: 0 0 10px #10b981;
-  opacity: 0; pointer-events: none;
-}
-.cam-detected .scan-line {
-  opacity: 1;
-  animation: scanAnim 1.5s infinite linear;
-}
-@keyframes scanAnim {
-  0% { top: 15%; }
-  50% { top: 85%; }
-  100% { top: 15%; }
+  color: #fff; font-size: 18px; font-weight: 700; margin-top: 10px;
+  text-shadow: 0 2px 5px rgba(0,0,0,0.8);
+  transition: color 0.2s;
 }
 
 /* Loading Spinner */
 #omrProcessing {
   position: absolute; inset: 0;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0,0,0,0.8);
   display: none; flex-direction: column;
   align-items: center; justify-content: center; z-index: 100;
   color: #fff;
@@ -676,16 +649,8 @@ function renderOMR(){
     <!-- AUTO SCAN CAMERA UI -->
     <div id="omrCamBox">
       <video id="omrVideo" autoplay playsinline muted></video>
-      
-      <div class="cam-overlay"></div>
-      
-      <div class="cam-corner tl"></div>
-      <div class="cam-corner tr"></div>
-      <div class="cam-corner bl"></div>
-      <div class="cam-corner br"></div>
-      
-      <!-- Scanning Line -->
-      <div class="scan-line"></div>
+      <canvas id="omrOverlay"></canvas>
+      <div class="cam-dark-overlay"></div>
 
       <div class="cam-header">
         <button id="omrStopCam">✕</button>
@@ -694,7 +659,7 @@ function renderOMR(){
       </div>
 
       <div class="cam-bottom">
-        <div class="cam-guide-text" id="camStatusText">Align sheet within borders</div>
+        <div class="cam-guide-text" id="camStatusText">Searching for sheet...</div>
       </div>
 
       <div id="omrProcessing">
@@ -707,9 +672,10 @@ function renderOMR(){
 }
 
 let omrVideoStream = null;
-let autoScanInterval = null;
-let isProcessingFrame = false;
-let noDetectCounter = 0; // Fallback timer
+let scanAnimId = null;
+let isScanning = false;
+let stabilityCounter = 0;
+const REQUIRED_STABILITY = 25; // Approx 0.8 seconds at 30fps
 
 function playBeep() {
   try {
@@ -727,6 +693,7 @@ function playBeep() {
 function attachOMR(){
   const video = $('#omrVideo');
   const canvas = $('#omrCanvas');
+  const overlay = $('#omrOverlay');
   const camBox = $('#omrCamBox');
   const camStatus = $('#camStatusText');
   
@@ -739,14 +706,12 @@ function attachOMR(){
       video.srcObject = omrVideoStream;
       camBox.style.display = 'block';
       $('#omrResultBox').style.display = 'none';
-      camBox.classList.remove('cam-detected');
-      camStatus.textContent = "Align sheet within borders";
+      camStatus.textContent = "Align sheet edges...";
+      camStatus.style.color = "#fff";
       
-      isProcessingFrame = false;
-      noDetectCounter = 0;
-      clearInterval(autoScanInterval);
-      autoScanInterval = setInterval(detectSheetLoop, 400); 
-
+      isScanning = true;
+      stabilityCounter = 0;
+      scanLoop();
     } catch(e) { toast('Camera permission nahi mili!','error'); }
   });
 
@@ -766,95 +731,159 @@ function attachOMR(){
 }
 
 function stopCamera() {
-  if(autoScanInterval) { clearInterval(autoScanInterval); autoScanInterval = null; }
-  if(omrVideoStream) omrVideoStream.getTracks().forEach(t => t.stop());
-  const camBox = document.getElementById('omrCamBox');
-  if(camBox) camBox.style.display = 'none';
+  isScanning = false;
+  if(scanAnimId) cancelAnimationFrame(scanAnimId);
+  if(omrVideoStream) {
+    omrVideoStream.getTracks().forEach(t => t.stop());
+    omrVideoStream = null;
+  }
+  $('#omrCamBox').style.display = 'none';
 }
 
 // LIVE DETECTION LOOP
-function detectSheetLoop() {
-  if(isProcessingFrame) return; 
-  const video = document.getElementById('omrVideo');
-  const camBox = document.getElementById('omrCamBox');
-  const camStatus = document.getElementById('camStatusText');
-
-  if (!video || video.readyState !== 4 || typeof cv === 'undefined') return;
-  isProcessingFrame = true;
+function scanLoop() {
+  if(!isScanning) return;
+  
+  const video = $('#omrVideo');
+  const overlay = $('#omrOverlay');
+  const camStatus = $('#camStatusText');
+  
+  if (!video || video.readyState !== 4 || typeof cv === 'undefined') {
+    scanAnimId = requestAnimationFrame(scanLoop);
+    return;
+  }
 
   try {
+    // 1. Setup small canvas for fast detection
+    let detW = 320, detH = 240;
     let detCanvas = document.createElement('canvas');
-    detCanvas.width = 320; detCanvas.height = 240;
-    detCanvas.getContext('2d').drawImage(video, 0, 0, detCanvas.width, detCanvas.height);
+    detCanvas.width = detW; detCanvas.height = detH;
+    detCanvas.getContext('2d').drawImage(video, 0, 0, detW, detH);
     
     let src = cv.imread(detCanvas);
     let gray = new cv.Mat();
     let blurred = new cv.Mat();
-    let thresh = new cv.Mat();
+    let edges = new cv.Mat();
     let contours = new cv.MatVector();
     let hierarchy = new cv.Mat();
     
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-    cv.GaussianBlur(gray, blurred, new cv.Size(7, 7), 0, 0, cv.BORDER_DEFAULT);
-    cv.adaptiveThreshold(blurred, thresh, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 15, 10);
+    cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
+    cv.Canny(blurred, edges, 75, 200);
     
-    let kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(7, 7));
-    cv.morphologyEx(thresh, thresh, cv.MORPH_CLOSE, kernel);
-    
-    cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+    let kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
+    cv.dilate(edges, edges, kernel);
+
+    cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
     
     let maxArea = 0;
-    let imgArea = detCanvas.width * detCanvas.height;
+    let bestPoly = null;
+    let imgArea = detW * detH;
     
     for (let i = 0; i < contours.size(); ++i) {
       let cnt = contours.get(i);
       let area = cv.contourArea(cnt);
-      if (area > imgArea * 0.10) { 
-        maxArea = Math.max(maxArea, area);
+      // Paper must be at least 15% of screen
+      if (area > imgArea * 0.15) { 
+        let peri = cv.arcLength(cnt, true);
+        let approx = new cv.Mat();
+        cv.approxPolyDP(cnt, approx, 0.02 * peri, true); 
+        
+        if (approx.rows === 4) { 
+          if (area > maxArea) {
+            maxArea = area;
+            if (bestPoly) bestPoly.delete();
+            bestPoly = approx.clone();
+          }
+        }
+        approx.delete();
       }
       cnt.delete();
     }
     
-    src.delete(); gray.delete(); blurred.delete(); thresh.delete(); contours.delete(); hierarchy.delete(); kernel.delete();
+    src.delete(); gray.delete(); blurred.delete(); edges.delete(); contours.delete(); hierarchy.delete(); kernel.delete();
     
-    if (maxArea > 3000) {
-      // Paper Found!
-      camBox.classList.add('cam-detected');
-      camStatus.textContent = "Sheet Detected! Hold Still...";
-      noDetectCounter = 0; // Reset fallback counter
+    // 2. Draw Overlay
+    overlay.width = overlay.clientWidth;
+    overlay.height = overlay.clientHeight;
+    let oCtx = overlay.getContext('2d');
+    oCtx.clearRect(0, 0, overlay.width, overlay.height);
+    
+    if (bestPoly) {
+      stabilityCounter++;
+      camStatus.textContent = "Hold Still... " + (Math.floor(stabilityCounter/REQUIRED_STABILITY*100)) + "%";
+      camStatus.style.color = "#10b981";
       
-      clearTimeout(window.autoScanTimer);
-      window.autoScanTimer = setTimeout(() => { autoCapture(); }, 600);
-    } else {
-      // Paper Not Found
-      camBox.classList.remove('cam-detected');
-      camStatus.textContent = "Align sheet within borders";
+      oCtx.beginPath();
+      oCtx.strokeStyle = "#10b981";
+      oCtx.lineWidth = 4;
+      oCtx.lineJoin = "round";
       
-      // FALLBACK: If AI can't find it for 3 seconds, scan the center box manually
-      noDetectCounter++;
-      if(noDetectCounter > 8) {
-          camStatus.textContent = "Forcing Scan...";
-          autoCapture();
+      let scaleX = overlay.width / detW;
+      let scaleY = overlay.height / detH;
+      
+      let pts = [];
+      for(let i=0; i<4; i++) {
+        pts.push({
+          x: bestPoly.data32S[i*2] * scaleX,
+          y: bestPoly.data32S[i*2+1] * scaleY
+        });
       }
+      
+      oCtx.moveTo(pts[0].x, pts[0].y);
+      for(let i=1; i<4; i++) oCtx.lineTo(pts[i].x, pts[i].y);
+      oCtx.closePath();
+      oCtx.stroke();
+      
+      // Draw green dots on corners
+      for(let i=0; i<4; i++) {
+          oCtx.beginPath();
+          oCtx.arc(pts[i].x, pts[i].y, 8, 0, 2*Math.PI);
+          oCtx.fillStyle = "#10b981";
+          oCtx.fill();
+      }
+
+      if (stabilityCounter >= REQUIRED_STABILITY) {
+         captureOMR(); 
+         if(bestPoly) bestPoly.delete();
+         return; // Stop loop
+      }
+      bestPoly.delete();
+    } else {
+      stabilityCounter = 0;
+      camStatus.textContent = "Align sheet edges...";
+      camStatus.style.color = "#fff";
     }
-  } catch(e) { console.log("Det Error", e); } finally { isProcessingFrame = false; }
+    
+  } catch(e) { console.log("Det Error", e); }
+  
+  scanAnimId = requestAnimationFrame(scanLoop);
 }
 
-function autoCapture() {
-  if(isProcessingFrame) return; 
-  stopCamera(); 
+function captureOMR() {
+  isScanning = false;
+  if(scanAnimId) cancelAnimationFrame(scanAnimId);
+  
   playBeep(); 
   
-  const video = document.getElementById('omrVideo');
-  const canvas = document.getElementById('omrCanvas');
-  const spinner = document.getElementById('omrProcessing');
-  const name = document.getElementById('omrStudentName').value.trim() || 'Unknown';
+  const video = $('#omrVideo');
+  const canvas = $('#omrCanvas');
+  const spinner = $('#omrProcessing');
+  const name = $('#omrStudentName').value.trim() || 'Unknown';
   
-  if(spinner) spinner.style.display = 'flex';
-  
+  // Draw frame FIRST
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   canvas.getContext('2d').drawImage(video, 0, 0);
+  
+  // Stop camera immediately
+  if(omrVideoStream) {
+    omrVideoStream.getTracks().forEach(t => t.stop());
+    omrVideoStream = null;
+  }
+  $('#omrCamBox').style.display = 'none';
+  
+  if(spinner) spinner.style.display = 'flex';
   
   setTimeout(() => {
     if(spinner) spinner.style.display = 'none';
@@ -863,7 +892,7 @@ function autoCapture() {
     $('#omrSaveBtn').style.display = 'none';
     $('#omrPreviewImg').src = '';
     processAdvancedOMR(canvas, name);
-  }, 200);
+  }, 300);
 }
 
 // ULTIMATE OMR READING ALGORITHM
@@ -963,7 +992,6 @@ function processAdvancedOMR(canvas, studentName) {
       let cnt = c2.get(i);
       let rect = cv.boundingRect(cnt);
       
-      // Exact Bubble size filter for 1000x1414
       if (rect.y > height * 0.35 && rect.width > 10 && rect.width < 50 && rect.height > 10 && rect.height < 50) {
         let aspect = rect.width / rect.height;
         if (aspect > 0.6 && aspect < 1.4) { 
@@ -978,7 +1006,6 @@ function processAdvancedOMR(canvas, studentName) {
       cnt.delete();
     }
     
-    // Sort bubbles strictly Top-to-Bottom, then Left-to-Right
     bubbles.sort((a, b) => Math.abs(a.y - b.y) < 25 ? a.x - b.x : a.y - b.y);
     
     let rows = [], currentRow = [], lastY = -1;
@@ -996,18 +1023,15 @@ function processAdvancedOMR(canvas, studentName) {
     
     let studentAnswers = new Array(100).fill(null);
     
-    // Process exactly 20 rows (as per GVI sheet)
     if (rows.length >= 20) {
        for (let r = 0; r < 20; r++) {
            let row = rows[r];
-           // Check if we have enough bubbles in this row (should be 20 for 5 columns)
            if (row.length >= 20) {
                for (let col = 0; col < 5; col++) {
                    let qIndex = col * 20 + r; 
                    let startBubble = col * 4;
                    let marked = null, maxMean = 80;
                    
-                   // Find the darkest filled bubble in this set of 4
                    for (let b = 0; b < 4; b++) {
                        let bubble = row[startBubble + b];
                        if (bubble && bubble.filled && bubble.mean > maxMean) {
@@ -1023,7 +1047,6 @@ function processAdvancedOMR(canvas, studentName) {
     
     let score = 0, totalQ = 100;
     for (let i = 0; i < totalQ; i++) {
-       // If answer is matched and key is not '-'
        if (studentAnswers[i] && savedAnswerKey[i] !== '-' && studentAnswers[i] === savedAnswerKey[i]) {
            score++;
        }
