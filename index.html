@@ -636,7 +636,25 @@ function renderOMR(){
 
     <div id="omrResultBox" style="display:none; padding:20px; background:#fff; border-radius:12px; border:2px solid var(--gold); text-align:center; box-shadow: 0 4px 12px rgba(0,0,0,0.1)">
       <h2 style="color:var(--gold-dark); font-size:32px; margin-bottom:5px" id="omrFinalScore">0 / 0</h2>
-      <p style="font-size:14px; color:var(--slate); margin-bottom:15px">Result Calculate Ho Gaya</p>
+      
+      <div style="display:flex; justify-content:center; gap:15px; margin-bottom:15px;">
+        <div style="background:var(--slate-5); padding:8px 12px; border-radius:8px;">
+          <div style="font-size:12px; color:var(--slate);">Attempted</div>
+          <div style="font-size:16px; font-weight:bold;" id="omrAttempted">0</div>
+        </div>
+        <div style="background:var(--emerald-light); padding:8px 12px; border-radius:8px;">
+          <div style="font-size:12px; color:var(--emerald);">Correct</div>
+          <div style="font-size:16px; font-weight:bold; color:var(--emerald);" id="omrCorrect">0</div>
+        </div>
+        <div style="background:var(--rose-light); padding:8px 12px; border-radius:8px;">
+          <div style="font-size:12px; color:var(--rose);">Wrong</div>
+          <div style="font-size:16px; font-weight:bold; color:var(--rose);" id="omrWrong">0</div>
+        </div>
+        <div style="background:var(--blue-light); padding:8px 12px; border-radius:8px;">
+          <div style="font-size:12px; color:var(--blue);">Percentage</div>
+          <div style="font-size:16px; font-weight:bold; color:var(--blue);" id="omrPercentage">0%</div>
+        </div>
+      </div>
       
       <div style="margin-bottom: 15px;">
         <p style="font-size: 12px; color: var(--slate); margin-bottom: 5px;">AI ne paper ka ye hissa padha:</p>
@@ -871,10 +889,9 @@ function captureOMR() {
   const spinner = $('#omrProcessing');
   const name = $('#omrStudentName').value.trim() || 'Unknown';
   
-  // Size down the canvas before drawing to prevent mobile memory crash
-  canvas.width = 800; 
-  canvas.height = 1000;
-  canvas.getContext('2d').drawImage(video, 0, 0, 800, 1000);
+  canvas.width = 1000; 
+  canvas.height = 1414;
+  canvas.getContext('2d').drawImage(video, 0, 0, 1000, 1414);
   
   if(omrVideoStream) {
     omrVideoStream.getTracks().forEach(t => t.stop());
@@ -894,76 +911,197 @@ function captureOMR() {
   }, 200);
 }
 
-// ULTIMATE OMR READING ALGORITHM (Fixed Grid Method)
+// ULTIMATE OMR READING ALGORITHM
 function processAdvancedOMR(canvas, studentName) {
   try {
     let src = cv.imread(canvas);
     let gray = new cv.Mat();
+    let blurred = new cv.Mat();
+    let edges = new cv.Mat();
+    
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-
-    // Show Preview
-    $('#omrPreviewImg').src = canvas.toDataURL('image/jpeg', 0.5);
-
-    // Fixed Grid Coordinates for GVI BSEB Pattern (based on 800x1000 image)
-    // Col 1: Q1-20 | Col 2: Q21-40 | Col 3: Q41-60 | Col 4: Q61-80 | Col 5: Q81-100
-    let startX = 110; // Center of first bubble (Option A of Q1)
-    let startY = 410; // Center of Q1
-    let colSpacing = 145; // Gap between columns
-    let rowSpacing = 27;  // Gap between rows (1 to 20)
-    let optSpacing = 31;  // Gap between A, B, C, D
-
-    let studentAnswers = new Array(100).fill('-');
-
-    for (let col = 0; col < 5; col++) {
-      for (let row = 0; row < 20; row++) {
-        let qIndex = col * 20 + row;
-        let maxDarkness = 0;
-        let markedOpt = null;
-
-        for (let opt = 0; opt < 4; opt++) {
-          let cx = startX + (col * colSpacing) + (opt * optSpacing);
-          let cy = startY + (row * rowSpacing);
-
-          // Ensure we stay within image bounds
-          if (cx >= 15 && cx < canvas.width - 15 && cy >= 15 && cy < canvas.height - 15) {
-            // Create a small 24x24 box around the expected bubble center
-            let rect = new cv.Rect(cx - 12, cy - 12, 24, 24);
-            let roi = gray.roi(rect);
-            let mean = cv.mean(roi)[0];
-            roi.delete();
-
-            // If it's dark (filled), track the darkest one
-            if (mean < 120) { 
-              if (mean < maxDarkness || maxDarkness === 0) {
-                maxDarkness = mean;
-                markedOpt = opt;
-              }
-            }
+    cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
+    
+    // Find paper corners in the resized image to warp perfectly
+    let median = cv.mean(blurred)[0];
+    let lower = Math.max(0, (1 - 0.33) * median);
+    let upper = Math.min(255, (1 + 0.33) * median);
+    cv.Canny(blurred, edges, lower, upper);
+    
+    let contours = new cv.MatVector();
+    let hierarchy = new cv.Mat();
+    cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+    
+    let maxArea = 0;
+    let bestPoly = null;
+    let imgArea = canvas.width * canvas.height;
+    
+    for (let i = 0; i < contours.size(); ++i) {
+      let cnt = contours.get(i);
+      let area = cv.contourArea(cnt);
+      
+      if (area > imgArea * 0.15) { 
+        let peri = cv.arcLength(cnt, true);
+        let approx = new cv.Mat();
+        cv.approxPolyDP(cnt, approx, 0.02 * peri, true); 
+        
+        if (approx.rows === 4) { 
+          if (area > maxArea) {
+            maxArea = area;
+            if (bestPoly) bestPoly.delete();
+            bestPoly = approx.clone();
           }
         }
-        if (markedOpt !== null) {
-          studentAnswers[qIndex] = String.fromCharCode(65 + markedOpt);
+        approx.delete();
+      }
+      cnt.delete();
+    }
+    
+    let warped = new cv.Mat();
+    
+    if (bestPoly) {
+      let pts = [];
+      for(let i=0; i<4; i++) pts.push({ x: bestPoly.data32S[i*2], y: bestPoly.data32S[i*2+1] });
+      
+      pts.sort((a, b) => (a.x + a.y) - (b.x + b.y));
+      let tl = pts[0], br = pts[3];
+      pts.sort((a, b) => (a.x - a.y) - (b.x - b.y));
+      let tr = pts[3], bl = pts[0];
+      
+      let srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [tl.x, tl.y, tr.x, tr.y, br.x, br.y, bl.x, bl.y]);
+      let dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, canvas.width, 0, canvas.width, canvas.height, 0, canvas.height]);
+      let M = cv.getPerspectiveTransform(srcTri, dstTri);
+      cv.warpPerspective(src, warped, M, new cv.Size(canvas.width, canvas.height));
+      
+      M.delete(); dstTri.delete(); srcTri.delete();
+    } else {
+      src.copyTo(warped);
+    }
+    
+    // Show Preview
+    cv.imshow(canvas, warped);
+    $('#omrPreviewImg').src = canvas.toDataURL('image/jpeg', 0.6);
+
+    let warpedGray = new cv.Mat();
+    cv.cvtColor(warped, warpedGray, cv.COLOR_RGBA2GRAY);
+    
+    let thresh = new cv.Mat();
+    cv.adaptiveThreshold(warpedGray, thresh, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 15, 5);
+
+    let c2 = new cv.MatVector();
+    let h2 = new cv.Mat();
+    cv.findContours(thresh, c2, h2, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+    
+    let bubbles = [];
+    for (let i = 0; i < c2.size(); ++i) {
+      let cnt = c2.get(i);
+      let rect = cv.boundingRect(cnt);
+      
+      // Filter based on 1000x1414 size
+      if (rect.y > 550 && rect.width > 15 && rect.width < 45 && rect.height > 15 && rect.height < 45) {
+        let aspect = rect.width / rect.height;
+        if (aspect > 0.7 && aspect < 1.4) { 
+          let mask = cv.Mat.zeros(thresh.rows, thresh.cols, cv.CV_8UC1);
+          cv.drawContours(mask, c2, i, new cv.Scalar(255), -1);
+          let mean = cv.mean(warpedGray, mask)[0];
+          bubbles.push({ x: rect.x + rect.width/2, y: rect.y + rect.height/2, mean: mean });
+          mask.delete();
         }
       }
-    }
-
-    // Calculate Score
-    let score = 0, totalQ = 100;
-    for (let i = 0; i < totalQ; i++) {
-       if (studentAnswers[i] !== '-' && savedAnswerKey[i] !== '-' && studentAnswers[i] === savedAnswerKey[i]) {
-           score++;
-       }
+      cnt.delete();
     }
     
-    $('#omrFinalScore').textContent = `${score} / ${totalQ}`;
+    // Sort bubbles by Y, then X
+    bubbles.sort((a, b) => {
+        if (Math.abs(a.y - b.y) < 15) return a.x - b.x;
+        return a.y - b.y;
+    });
+    
+    let rows = [];
+    let currentRow = [];
+    let lastY = -1;
+    
+    for (let b of bubbles) {
+      if (lastY === -1 || Math.abs(b.y - lastY) < 15) {
+        currentRow.push(b);
+      } else {
+        if (currentRow.length > 0) {
+          currentRow.sort((a,b) => a.x - b.x);
+          rows.push(currentRow);
+        }
+        currentRow = [b];
+      }
+      lastY = b.y;
+    }
+    if (currentRow.length > 0) { currentRow.sort((a,b)=>a.x-b.x); rows.push(currentRow); }
+    
+    // Filter valid rows with enough bubbles
+    let validRows = rows.filter(r => r.length >= 15);
+    
+    // Take first 20 rows
+    validRows = validRows.slice(0, 20);
+    
+    let studentAnswers = new Array(100).fill('-');
+    let attempted = 0;
+    let correct = 0;
+    let wrong = 0;
+    
+    for (let r = 0; r < validRows.length; r++) {
+        let row = validRows[r];
+        let bubblesPerCol = row.length / 5;
+        
+        for (let col = 0; col < 5; col++) {
+            let qIndex = col * 20 + r;
+            let startIdx = Math.round(col * bubblesPerCol);
+            let endIdx = Math.round((col + 1) * bubblesPerCol);
+            
+            let group = row.slice(startIdx, endIdx);
+            
+            if (group.length >= 3) {
+                let darkest = group.reduce((min, b) => b.mean < min.mean ? b : min, group[0]);
+                
+                // If bubble is dark enough (marked)
+                if (darkest.mean < 130) { 
+                    let optIndex = group.indexOf(darkest);
+                    let ans = String.fromCharCode(65 + optIndex);
+                    studentAnswers[qIndex] = ans;
+                    
+                    if (savedAnswerKey[qIndex] !== '-') {
+                        attempted++;
+                        if (ans === savedAnswerKey[qIndex]) correct++;
+                        else wrong++;
+                    }
+                }
+            }
+        }
+    }
+    
+    let totalQ = 100;
+    let percentage = ((correct / totalQ) * 100).toFixed(1);
+    
+    $('#omrFinalScore').textContent = `${correct} / ${totalQ}`;
+    $('#omrAttempted').textContent = attempted;
+    $('#omrCorrect').textContent = correct;
+    $('#omrWrong').textContent = wrong;
+    $('#omrPercentage').textContent = percentage + "%";
+    
     $('#omrSaveBtn').style.display = 'inline-block';
-    currentOMRResult = { name: studentName, score: score, total: totalQ, date: todayISO() };
+    currentOMRResult = { 
+        name: studentName, 
+        score: correct, 
+        total: totalQ, 
+        attempted, correct, wrong, percentage,
+        date: todayISO() 
+    };
     
-    src.delete(); gray.delete();
+    thresh.delete(); c2.delete(); h2.delete();
+    warpedGray.delete(); warped.delete();
+    src.delete(); gray.delete(); blurred.delete(); edges.delete(); contours.delete(); hierarchy.delete();
+    if(bestPoly) bestPoly.delete();
     
   } catch(e) { 
     console.error(e); 
-    $('#omrFinalScore').textContent = "Error! Read again."; 
+    $('#omrFinalScore').textContent = "Error!"; 
   }
 }
 
@@ -1231,16 +1369,18 @@ function renderOMRResults(){
     <div class="card">
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Rank</th><th>Student Name</th><th>Score</th><th>Percentage</th></tr></thead>
+          <thead><tr><th>Rank</th><th>Student Name</th><th>Score</th><th>Percentage</th><th>Attempted</th><th>Correct</th><th>Wrong</th></tr></thead>
           <tbody>
             ${sorted.map((res, index) => {
-              let percentage = ((res.score / res.total) * 100).toFixed(1);
               let rankBadge = index === 0 ? '🥇 1' : index === 1 ? '🥈 2' : index === 2 ? '🥉 3' : `${index + 1}`;
               return `<tr>
                   <td><strong>${rankBadge}</strong></td>
                   <td>${esc(res.name)}</td>
                   <td style="color:var(--emerald); font-weight:bold">${res.score} / ${res.total}</td>
-                  <td><span class="badge badge-info">${percentage}%</span></td>
+                  <td><span class="badge badge-info">${res.percentage || '0.0'}%</span></td>
+                  <td>${res.attempted || 0}</td>
+                  <td style="color:var(--emerald)">${res.correct || 0}</td>
+                  <td style="color:var(--rose)">${res.wrong || 0}</td>
                 </tr>`;
             }).join('')}
           </tbody>
@@ -1253,10 +1393,9 @@ function renderOMRResults(){
 function attachOMRResults(){
   $('#dlCsvBtn')?.addEventListener('click', () => {
     let sorted = [...state.omrResults].sort((a, b) => b.score - a.score);
-    let csvContent = "Rank,Student Name,Score,Total,Percentage\n";
+    let csvContent = "Rank,Student Name,Score,Total,Percentage,Attempted,Correct,Wrong\n";
     sorted.forEach((res, index) => {
-      let percent = ((res.score / res.total) * 100).toFixed(1);
-      csvContent += `${index + 1},${res.name},${res.score},${res.total},${percent}%\n`;
+      csvContent += `${index + 1},${res.name},${res.score},${res.total},${res.percentage || 0}%,${res.attempted || 0},${res.correct || 0},${res.wrong || 0}\n`;
     });
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
