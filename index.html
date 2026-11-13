@@ -894,84 +894,60 @@ function captureOMR() {
   }, 200);
 }
 
-// ULTIMATE OMR READING ALGORITHM (Fixed for Red Sheet & Memory Safety)
+// ULTIMATE OMR READING ALGORITHM (Fixed Grid Method)
 function processAdvancedOMR(canvas, studentName) {
   try {
     let src = cv.imread(canvas);
     let gray = new cv.Mat();
-    
-    // 1. Convert to Gray
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-    
-    // 2. Heavy Blur to remove red lines and noise
-    let blurred = new cv.Mat();
-    cv.GaussianBlur(gray, blurred, new cv.Size(7, 7), 0, 0, cv.BORDER_DEFAULT);
-    
-    // 3. Thresholding (Otsu is best for Black & White) to isolate black bubbles
-    let thresh = new cv.Mat();
-    cv.threshold(blurred, thresh, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU);
 
-    let c2 = new cv.MatVector();
-    let h2 = new cv.Mat();
-    cv.findContours(thresh, c2, h2, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-    
-    let bubbles = [];
-    for (let i = 0; i < c2.size(); ++i) {
-      let cnt = c2.get(i);
-      let rect = cv.boundingRect(cnt);
-      
-      // Size filter (Ignore tiny noise and big blocks)
-      if (rect.y > 350 && rect.width > 10 && rect.width < 40 && rect.height > 10 && rect.height < 40) {
-        let aspect = rect.width / rect.height;
-        if (aspect > 0.7 && aspect < 1.3) { 
-          let mask = cv.Mat.zeros(thresh.rows, thresh.cols, cv.CV_8UC1);
-          cv.drawContours(mask, c2, i, new cv.Scalar(255), -1);
-          let mean = cv.mean(gray, mask)[0]; // Original gray mean
-          mask.delete();
-          bubbles.push({ x: rect.x, y: rect.y, mean: mean });
-        }
-      }
-      cnt.delete();
-    }
-    
-    // Sort bubbles strictly Top-to-Bottom, then Left-to-Right
-    bubbles.sort((a, b) => Math.abs(a.y - b.y) < 15 ? a.x - b.x : a.y - b.y);
-    
-    let rows = [], currentRow = [], lastY = -1;
-    
-    for (let b of bubbles) {
-      if (lastY === -1 || Math.abs(b.y - lastY) < 15) {
-        currentRow.push(b);
-      } else {
-        if (currentRow.length > 0) { currentRow.sort((a, b) => a.x - b.x); rows.push(currentRow); }
-        currentRow = [b];
-      }
-      lastY = b.y;
-    }
-    if (currentRow.length > 0) { currentRow.sort((a, b) => a.x - b.x); rows.push(currentRow); }
-    
+    // Show Preview
+    $('#omrPreviewImg').src = canvas.toDataURL('image/jpeg', 0.5);
+
+    // Fixed Grid Coordinates for GVI BSEB Pattern (based on 800x1000 image)
+    // Col 1: Q1-20 | Col 2: Q21-40 | Col 3: Q41-60 | Col 4: Q61-80 | Col 5: Q81-100
+    let startX = 110; // Center of first bubble (Option A of Q1)
+    let startY = 410; // Center of Q1
+    let colSpacing = 145; // Gap between columns
+    let rowSpacing = 27;  // Gap between rows (1 to 20)
+    let optSpacing = 31;  // Gap between A, B, C, D
+
     let studentAnswers = new Array(100).fill('-');
-    
-    // Map to 20 rows
-    for (let r = 0; r < Math.min(rows.length, 20); r++) {
-        let row = rows[r];
-        if (row.length >= 15) { // Ensure enough bubbles in the row
-            // Divide the row into 5 chunks (columns)
-            let chunkSize = Math.floor(row.length / 5);
-            for (let col = 0; col < 5; col++) {
-                let qIndex = col * 20 + r;
-                let chunk = row.slice(col * chunkSize, (col + 1) * chunkSize);
-                
-                if (chunk.length === 4) { // Perfect group of 4 options
-                    let darkest = chunk.reduce((min, b) => b.mean < min.mean ? b : min, chunk[0]);
-                    if (darkest.mean < 150) { // If it's dark enough (filled)
-                        studentAnswers[qIndex] = String.fromCharCode(65 + chunk.indexOf(darkest));
-                    }
-                }
+
+    for (let col = 0; col < 5; col++) {
+      for (let row = 0; row < 20; row++) {
+        let qIndex = col * 20 + row;
+        let maxDarkness = 0;
+        let markedOpt = null;
+
+        for (let opt = 0; opt < 4; opt++) {
+          let cx = startX + (col * colSpacing) + (opt * optSpacing);
+          let cy = startY + (row * rowSpacing);
+
+          // Ensure we stay within image bounds
+          if (cx >= 15 && cx < canvas.width - 15 && cy >= 15 && cy < canvas.height - 15) {
+            // Create a small 24x24 box around the expected bubble center
+            let rect = new cv.Rect(cx - 12, cy - 12, 24, 24);
+            let roi = gray.roi(rect);
+            let mean = cv.mean(roi)[0];
+            roi.delete();
+
+            // If it's dark (filled), track the darkest one
+            if (mean < 120) { 
+              if (mean < maxDarkness || maxDarkness === 0) {
+                maxDarkness = mean;
+                markedOpt = opt;
+              }
             }
+          }
         }
+        if (markedOpt !== null) {
+          studentAnswers[qIndex] = String.fromCharCode(65 + markedOpt);
+        }
+      }
     }
-    
+
+    // Calculate Score
     let score = 0, totalQ = 100;
     for (let i = 0; i < totalQ; i++) {
        if (studentAnswers[i] !== '-' && savedAnswerKey[i] !== '-' && studentAnswers[i] === savedAnswerKey[i]) {
@@ -983,11 +959,7 @@ function processAdvancedOMR(canvas, studentName) {
     $('#omrSaveBtn').style.display = 'inline-block';
     currentOMRResult = { name: studentName, score: score, total: totalQ, date: todayISO() };
     
-    // Show Preview (just the original for now to save memory)
-    $('#omrPreviewImg').src = canvas.toDataURL('image/jpeg', 0.5);
-    
-    thresh.delete(); c2.delete(); h2.delete();
-    src.delete(); gray.delete(); blurred.delete();
+    src.delete(); gray.delete();
     
   } catch(e) { 
     console.error(e); 
@@ -995,7 +967,7 @@ function processAdvancedOMR(canvas, studentName) {
   }
 }
 
-// ===================== OTHER PAGES (Unchanged) =====================
+// ===================== OTHER PAGES =====================
 function renderDashboard(){
   const active=state.students.filter(s=>s.active!==false).length;
   const batchCount=state.batches.length;
