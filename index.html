@@ -207,7 +207,7 @@ tbody tr:last-child td{border-bottom:none}
 }
 .sidebar-toggle{display:none;width:36px;height:36px;border-radius:8px;background:var(--navy);color:#fff;font-size:18px;place-items:center}
 
-/* IFRAME FOR NEW OMR APP */
+/* IFRAME STYLES */
 #omrIframe {
   width: 100%;
   height: calc(100vh - 130px);
@@ -711,7 +711,7 @@ function render(){
 // ===================== OMR IFRAME =====================
 function renderOMR(){
   return `
-    <iframe id="omrIframe"></iframe>
+    <iframe id="omrIframe" allow="camera; microphone"></iframe>
   `;
 }
 function attachOMR(){
