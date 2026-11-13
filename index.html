@@ -675,7 +675,7 @@ let omrVideoStream = null;
 let scanAnimId = null;
 let isScanning = false;
 let stabilityCounter = 0;
-const REQUIRED_STABILITY = 25; // Approx 0.8 seconds at 30fps
+const REQUIRED_STABILITY = 15; // Faster scanning (0.5 seconds)
 
 function playBeep() {
   try {
@@ -692,7 +692,6 @@ function playBeep() {
 
 function attachOMR(){
   const video = $('#omrVideo');
-  const canvas = $('#omrCanvas');
   const overlay = $('#omrOverlay');
   const camBox = $('#omrCamBox');
   const camStatus = $('#camStatusText');
@@ -740,7 +739,7 @@ function stopCamera() {
   $('#omrCamBox').style.display = 'none';
 }
 
-// LIVE DETECTION LOOP
+// ULTIMATE ROBUST LIVE DETECTION LOOP
 function scanLoop() {
   if(!isScanning) return;
   
@@ -754,8 +753,7 @@ function scanLoop() {
   }
 
   try {
-    // 1. Setup small canvas for fast detection
-    let detW = 320, detH = 240;
+    let detW = 480, detH = 640; 
     let detCanvas = document.createElement('canvas');
     detCanvas.width = detW; detCanvas.height = detH;
     detCanvas.getContext('2d').drawImage(video, 0, 0, detW, detH);
@@ -769,11 +767,13 @@ function scanLoop() {
     
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
     cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
-    cv.Canny(blurred, edges, 75, 200);
     
-    let kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
-    cv.dilate(edges, edges, kernel);
-
+    // Dynamic Canny
+    let median = cv.mean(blurred)[0];
+    let lower = Math.max(0, (1 - 0.33) * median);
+    let upper = Math.min(255, (1 + 0.33) * median);
+    cv.Canny(blurred, edges, lower, upper);
+    
     cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
     
     let maxArea = 0;
@@ -783,7 +783,7 @@ function scanLoop() {
     for (let i = 0; i < contours.size(); ++i) {
       let cnt = contours.get(i);
       let area = cv.contourArea(cnt);
-      // Paper must be at least 15% of screen
+      
       if (area > imgArea * 0.15) { 
         let peri = cv.arcLength(cnt, true);
         let approx = new cv.Mat();
@@ -801,15 +801,27 @@ function scanLoop() {
       cnt.delete();
     }
     
-    src.delete(); gray.delete(); blurred.delete(); edges.delete(); contours.delete(); hierarchy.delete(); kernel.delete();
+    src.delete(); gray.delete(); blurred.delete(); edges.delete(); contours.delete(); hierarchy.delete();
     
-    // 2. Draw Overlay
+    // Draw Overlay
     overlay.width = overlay.clientWidth;
     overlay.height = overlay.clientHeight;
     let oCtx = overlay.getContext('2d');
     oCtx.clearRect(0, 0, overlay.width, overlay.height);
     
     if (bestPoly) {
+      // KONE SORT KARNA (TAAKI GHUME NAHI)
+      let pts = [];
+      for(let i=0; i<4; i++) {
+        pts.push({ x: bestPoly.data32S[i*2], y: bestPoly.data32S[i*2+1] });
+      }
+      
+      pts.sort((a, b) => (a.x + a.y) - (b.x + b.y));
+      let tl = pts[0], br = pts[3];
+      pts.sort((a, b) => (a.x - a.y) - (b.x - b.y));
+      let tr = pts[3], bl = pts[0];
+      let sortedPts = [tl, tr, br, bl];
+
       stabilityCounter++;
       camStatus.textContent = "Hold Still... " + (Math.floor(stabilityCounter/REQUIRED_STABILITY*100)) + "%";
       camStatus.style.color = "#10b981";
@@ -822,23 +834,16 @@ function scanLoop() {
       let scaleX = overlay.width / detW;
       let scaleY = overlay.height / detH;
       
-      let pts = [];
-      for(let i=0; i<4; i++) {
-        pts.push({
-          x: bestPoly.data32S[i*2] * scaleX,
-          y: bestPoly.data32S[i*2+1] * scaleY
-        });
-      }
-      
-      oCtx.moveTo(pts[0].x, pts[0].y);
-      for(let i=1; i<4; i++) oCtx.lineTo(pts[i].x, pts[i].y);
+      oCtx.moveTo(sortedPts[0].x * scaleX, sortedPts[0].y * scaleY);
+      oCtx.lineTo(sortedPts[1].x * scaleX, sortedPts[1].y * scaleY);
+      oCtx.lineTo(sortedPts[2].x * scaleX, sortedPts[2].y * scaleY);
+      oCtx.lineTo(sortedPts[3].x * scaleX, sortedPts[3].y * scaleY);
       oCtx.closePath();
       oCtx.stroke();
       
-      // Draw green dots on corners
       for(let i=0; i<4; i++) {
           oCtx.beginPath();
-          oCtx.arc(pts[i].x, pts[i].y, 8, 0, 2*Math.PI);
+          oCtx.arc(sortedPts[i].x * scaleX, sortedPts[i].y * scaleY, 8, 0, 2*Math.PI);
           oCtx.fillStyle = "#10b981";
           oCtx.fill();
       }
@@ -871,12 +876,10 @@ function captureOMR() {
   const spinner = $('#omrProcessing');
   const name = $('#omrStudentName').value.trim() || 'Unknown';
   
-  // Draw frame FIRST
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   canvas.getContext('2d').drawImage(video, 0, 0);
   
-  // Stop camera immediately
   if(omrVideoStream) {
     omrVideoStream.getTracks().forEach(t => t.stop());
     omrVideoStream = null;
